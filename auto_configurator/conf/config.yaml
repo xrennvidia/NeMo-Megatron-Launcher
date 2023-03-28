@@ -16,6 +16,7 @@ results:
     base: /lustre/fsw/joc/xren/results/nemo_megatron/nemo
     dir: gpt3_hp/5b
 nemo_code: /home/xren/my_work/nemo_megatron/nemo/NeMo
+bignlp_scripts_code: /home/xren/my_work/nemo_megatron/bignlp-scripts
 nemo_launcher_code: /home/xren/my_work/nemo_megatron/NeMo-Megatron-Launcher
 
 #preproc_data: /lustre/fsw/joc/big_nlp/t5/dataset/Pile # T5 dataset
@@ -29,7 +30,7 @@ base_results_dir: ${results.base}/${results.dir}
 data_dir: ${preproc_data}
 
 #training_container: nvcr.io/ea-bignlp/bignlp-training:22.11-py3
-training_container: gitlab-master.nvidia.com/dl/joc/nemo-ci/nemo_ci:pipe.7703853
+training_container: gitlab-master.nvidia.com/xren/bignlp-scripts:nemo2303_te06
 container_mounts:
     - ${nemo_code}:/opt/NeMo
     - ${nemo_launcher_code}:/opt/NeMo-Megatron-Launcher
