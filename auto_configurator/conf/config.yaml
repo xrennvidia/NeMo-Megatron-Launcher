@@ -23,7 +23,7 @@ nemo_launcher_code: /home/xren/my_work/nemo_megatron/NeMo-Megatron-Launcher
 preproc_data: /lustre/fsw/joc/big_nlp/gpt3/prepare_dataset/the_pile/train # GPT3 dataset
 
 cluster_type: bcm  # bcm or bcp
-auto_configurator_path: /opt/NeMo-Megatron-Launcher/auto_configurator  # Path to the location of auto_configurator codebase.
+auto_configurator_path: ${nemo_launcher_code}/auto_configurator  # Path to the location of auto_configurator codebase.
 launcher_scripts_path: ${auto_configurator_path}/../launcher_scripts
 fastertransformer_path: ${auto_configurator_path}/../FasterTransformer
 base_results_dir: ${results.base}/${results.dir}
@@ -33,7 +33,6 @@ data_dir: ${preproc_data}
 training_container: gitlab-master.nvidia.com/xren/bignlp-scripts:nemo2303_te06
 container_mounts:
     - ${nemo_code}:/opt/NeMo
-    - ${nemo_launcher_code}:/opt/NeMo-Megatron-Launcher
 
 wandb:  # Weights and Biases (W&B) logging.
   enable: False  # Whether to save logs to W&B.
