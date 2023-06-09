@@ -36,7 +36,7 @@ launcher_scripts_path: /home/xren/my_work/nemo_megatron/NeMo-Megatron-Launcher/l
 data_dir: ${preproc_data}  # Location to store and read the data.
 base_results_dir: ${results.base}/${results.dir}  # Location to store the results, checkpoints and logs.
 container_mounts: # List of additional paths to mount to container. They will be mounted to same path.
-  - ${code}:/opt/bignlp/NeMo
+  - ${code}:/opt/NeMo
 
 #container: nvcr.io/ea-bignlp/bignlp-training:23.02-py3
 #container: nvcr.io/nvidian/nemo-nightly:latest-nightly-main
