@@ -19,10 +19,8 @@
 # DEALINGS IN THE SOFTWARE.
 
 ARG BIGNLP_BACKEND=pytorch
-ARG BIGNLP_BACKEND_BRANCH_TAG=22.12
+ARG BIGNLP_BACKEND_BRANCH_TAG=23.02
 
-# The following FROM line MUST say ...-base , not ...-devel!  Otherwise we
-# leak internal information, as -devel is internal-only.
 FROM nvcr.io/nvidia/${BIGNLP_BACKEND}:${BIGNLP_BACKEND_BRANCH_TAG}-py3 as pytorch
 
 #########################################
@@ -82,18 +80,38 @@ WORKDIR /opt
 #COPY bignlp-scripts/src dst
 #RUN ...
 
+# Get fastertransformer_backend
+RUN git clone https://github.com/triton-inference-server/fastertransformer_backend.git
+
+# Install SentencePiece
+RUN git clone https://github.com/google/sentencepiece.git && \
+    cd sentencepiece && \
+    mkdir build && \
+    cd build && \
+    cmake .. && \
+    make && \
+    make install && \
+    ldconfig
+
 # Install apex
+ARG APEX_COMMIT
 RUN pip uninstall -y apex && \
-    git clone https://github.com/ericharper/apex && \
+    git clone https://github.com/NVIDIA/apex && \
 	cd apex && \
-	git checkout 7afa66e8f83cf881bcba3b859c5b283a9bf9865c && \
-	pip install -v --disable-pip-version-check --no-cache-dir --global-option="--cpp_ext" --global-option="--cuda_ext" --global-option="--fast_layer_norm" --global-option="--bnp" --global-option="--xentropy" --global-option="--deprecated_fused_adam" --global-option="--deprecated_fused_lamb" --global-option="--fast_multihead_attn" --global-option="--distributed_lamb" --global-option="--transducer" --global-option="--distributed_adam" --global-option="--fmha" --global-option="--fast_bottleneck" --global-option="--nccl_p2p" --global-option="--peer_memory" --global-option="--permutation_search" --global-option="--focal_loss" --global-option="--fused_conv_bias_relu" ./
+    if [ ! -z $APEX_COMMIT ]; then \
+        git fetch origin $APEX_COMMIT && \
+        git checkout FETCH_HEAD; \
+    fi && \
+    pip install -v --disable-pip-version-check --no-cache-dir --global-option="--cpp_ext" --global-option="--cuda_ext" --global-option="--fast_layer_norm" --global-option="--distributed_adam" --global-option="--deprecated_fused_adam" ./
 
 # Install NeMo
+ARG NEMO_COMMIT
 RUN git clone https://github.com/NVIDIA/NeMo.git && \
     cd NeMo && \
-    git fetch origin 52d2ae67c4988bf312539ae22d449cc61ec087ab && \
-    git checkout FETCH_HEAD && \
+    if [ ! -z $NEMO_COMMIT ]; then \
+        git fetch origin $NEMO_COMMIT && \
+        git checkout FETCH_HEAD; \
+    fi && \
     pip uninstall -y nemo_toolkit sacrebleu && \
     pip install -e ".[nlp]" && \
     cd nemo/collections/nlp/data/language_modeling/megatron && \
@@ -102,6 +120,15 @@ RUN git clone https://github.com/NVIDIA/NeMo.git && \
 # HF cache
 RUN python -c "from transformers import AutoTokenizer; tok_gpt=AutoTokenizer.from_pretrained('gpt2'); tok_bert=AutoTokenizer.from_pretrained('bert-base-cased'); tok_large_bert=AutoTokenizer.from_pretrained('bert-large-cased'); tok_large_uncased_bert=AutoTokenizer.from_pretrained('bert-large-uncased');"
 
+# Install TE
+ARG TE_COMMIT
+RUN git clone https://github.com/NVIDIA/TransformerEngine.git && \
+    cd TransformerEngine && \
+    if [ ! -z $TE_COMMIT ]; then \
+        git fetch origin $TE_COMMIT && \
+        git checkout FETCH_HEAD; \
+    fi && \
+    NVTE_FRAMEWORK=pytorch pip install .
 
 # Install launch scripts
 COPY . NeMo-Megatron-Launcher
@@ -137,25 +164,8 @@ RUN pip install --no-cache-dir wandb==0.12.20 \
         'ipython>=7.31.1' \
         'torchmetrics==0.9.1'
 
-# Install SentencePiece
-RUN git clone https://github.com/google/sentencepiece.git && \
-    cd sentencepiece && \
-    mkdir build && \
-    cd build && \
-    cmake .. && \
-    make && \
-    make install && \
-    ldconfig
-
 # Copy FasterTransformer
 COPY --from=ft_builder /workspace/FasterTransformer FasterTransformer
-
-## Temporary fix for pickle issue
-#RUN sed -i "s/DEFAULT_PROTOCOL = 2/DEFAULT_PROTOCOL = 4/g" /opt/conda/lib/python3.8/site-packages/torch/serialization.py
-
-# Temporary fix CUDA issue
-RUN sed -i "s/, all_gpu_ids//g" /opt/conda/lib/python3.8/site-packages/pytorch_lightning/accelerators/cuda.py
-RUN sed -i "s/all_gpu_ids =/\# all_gpu_ids =/g" /opt/conda/lib/python3.8/site-packages/pytorch_lightning/accelerators/cuda.py
 
 # Examples
 WORKDIR /workspace

@@ -29,8 +29,7 @@ fastertransformer_path: ${auto_configurator_path}/../FasterTransformer
 base_results_dir: ${results.base}/${results.dir}
 data_dir: ${preproc_data}
 
-#training_container: nvcr.io/ea-bignlp/bignlp-training:22.11-py3
-training_container: gitlab-master.nvidia.com/xren/bignlp-scripts:nemo2303_te06
+training_container: nvcr.io/ea-bignlp/nemofw-training:23.05-py3
 container_mounts:
     - ${nemo_code}:/opt/NeMo
 
