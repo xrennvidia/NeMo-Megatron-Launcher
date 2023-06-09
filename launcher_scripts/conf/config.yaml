@@ -2,7 +2,7 @@ defaults:
   - _self_
   - cluster: bcm  # Leave it as bcm even if using bcp. It will be ignored for bcp.
   - data_preparation: gpt3/download_gpt3_pile
-  - training: gpt3/5b
+  - training: gpt3/175b
   - conversion: gpt3/convert_gpt3
   - fine_tuning: null
   - prompt_learning: null
@@ -21,19 +21,28 @@ debug: False
 
 stages:
   - training
-  - conversion
-  - evaluation
-  - export
+
+results:
+    base: /home/xren/results/nemo_megatron/nemo
+    dir: gpt3/175b
+code: /home/xren/my_work/nemo_megatron/nemo/NeMo
+
+#preproc_data: /lustre/fsw/joc/big_nlp/t5/dataset/Pile # T5 dataset
+preproc_data: /lustre/fsw/joc/big_nlp/gpt3/prepare_dataset/the_pile/train # GPT3 dataset in selene
+#preproc_data: /lustre/fsw/bignlp/dataset/the_pile_gpt3 # GPT3 dataset in preos
 
 cluster_type: bcm  # bcm or bcp. If bcm, it must match - cluster above.
-launcher_scripts_path: ???  # Path to NeMo Megatron Launch scripts, should ends with /launcher_scripts
-data_dir: ${launcher_scripts_path}/data  # Location to store and read the data.
-base_results_dir: ${launcher_scripts_path}/results  # Location to store the results, checkpoints and logs.
+launcher_scripts_path: /home/xren/my_work/nemo_megatron/NeMo-Megatron-Launcher/launcher_scripts  # Path to NeMo Megatron Launch scripts, should ends with /launcher_scripts
+data_dir: ${preproc_data}  # Location to store and read the data.
+base_results_dir: ${results.base}/${results.dir}  # Location to store the results, checkpoints and logs.
 container_mounts: # List of additional paths to mount to container. They will be mounted to same path.
-  - null
-container: nvcr.io/ea-bignlp/nemofw-training:23.05-py3
+  - ${code}:/opt/bignlp/NeMo
 
-wandb_api_key_file: null  # File where the w&B api key is stored. Key must be on the first line.
+#container: nvcr.io/ea-bignlp/bignlp-training:23.02-py3
+#container: nvcr.io/nvidian/nemo-nightly:latest-nightly-main
+container: gitlab-master.nvidia.com/xren/nemo_megatron_perf_optimization:nemo_nightly_extend_sp_230608
+
+wandb_api_key_file: ${launcher_scripts_path}/../wandb/wandb_api_key  # File where the w&B api key is stored. Key must be on the first line.
 
 env_vars:
   NCCL_TOPO_FILE: null # Should be a path to an XML file describing the topology
