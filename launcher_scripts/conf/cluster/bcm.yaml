@@ -4,6 +4,6 @@ exclusive: True
 gpus_per_task: null
 gpus_per_node: null
 mem: 0
-job_name_prefix: "joc-autoconfig:"
+job_name_prefix: "joc-bignlp:"
 srun_args:
   - "--no-container-mount-home"
