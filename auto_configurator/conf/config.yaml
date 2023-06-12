@@ -16,8 +16,7 @@ results:
     base: /lustre/fsw/joc/xren/results/nemo_megatron/nemo
     dir: gpt3_hp/5b
 nemo_code: /home/xren/my_work/nemo_megatron/nemo/NeMo
-bignlp_scripts_code: /home/xren/my_work/nemo_megatron/bignlp-scripts
-nemo_launcher_code: /home/xren/my_work/nemo_megatron/NeMo-Megatron-Launcher
+nemo_launcher_code: /home/xren/my_work/nemo_megatron/nemo/NeMo-Megatron-Launcher
 
 #preproc_data: /lustre/fsw/joc/big_nlp/t5/dataset/Pile # T5 dataset
 preproc_data: /lustre/fsw/joc/big_nlp/gpt3/prepare_dataset/the_pile/train # GPT3 dataset

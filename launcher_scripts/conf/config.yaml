@@ -32,7 +32,8 @@ preproc_data: /lustre/fsw/joc/big_nlp/gpt3/prepare_dataset/the_pile/train # GPT3
 #preproc_data: /lustre/fsw/bignlp/dataset/the_pile_gpt3 # GPT3 dataset in preos
 
 cluster_type: bcm  # bcm or bcp. If bcm, it must match - cluster above.
-launcher_scripts_path: /home/xren/my_work/nemo_megatron/NeMo-Megatron-Launcher/launcher_scripts  # Path to NeMo Megatron Launch scripts, should ends with /launcher_scripts
+# Path to NeMo Megatron Launch scripts, should ends with /launcher_scripts
+launcher_scripts_path: /home/xren/my_work/nemo_megatron/nemo/NeMo-Megatron-Launcher/launcher_scripts
 data_dir: ${preproc_data}  # Location to store and read the data.
 base_results_dir: ${results.base}/${results.dir}  # Location to store the results, checkpoints and logs.
 container_mounts: # List of additional paths to mount to container. They will be mounted to same path.
