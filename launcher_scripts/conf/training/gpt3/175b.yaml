@@ -1,5 +1,5 @@
 run:
-  name: 175b_a100_bf16_O2_nodes${training.trainer.num_nodes}_sp${training.model.sequence_parallel_size}_tp${training.model.tensor_model_parallel_size}_pp${training.model.pipeline_model_parallel_size}_vp${training.model.virtual_pipeline_model_parallel_size}_gbs${training.model.global_batch_size}_mbs${training.model.micro_batch_size}_ckpt${training.model.num_micro_batches_with_partial_activation_checkpoints}_seq${training.model.encoder_seq_length}
+  name: 175b_a100_bf16_O2_nodes${training.trainer.num_nodes}_cp${training.model.context_parallel_size}_tp${training.model.tensor_model_parallel_size}_pp${training.model.pipeline_model_parallel_size}_vp${training.model.virtual_pipeline_model_parallel_size}_gbs${training.model.global_batch_size}_mbs${training.model.micro_batch_size}_ckpt${training.model.num_micro_batches_with_partial_activation_checkpoints}_seq${training.model.encoder_seq_length}
   results_dir: ${base_results_dir}/${.name}
   time_limit: "00:20:00"
   dependency: "singleton"
@@ -49,6 +49,8 @@ exp_manager:
 model:
   micro_batch_size: 1
   global_batch_size: 2048
+  rampup_batch_size: null
+  context_parallel_size: 1
   tensor_model_parallel_size: 4
   pipeline_model_parallel_size: 8
   virtual_pipeline_model_parallel_size: 12 # interleaved pipeline, set to maximum
