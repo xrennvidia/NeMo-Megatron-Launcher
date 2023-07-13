@@ -47,6 +47,7 @@ exp_manager:
     buffer_size: 5
 
 model:
+  gc_interval: 100
   micro_batch_size: 2
   global_batch_size: 128
   rampup_batch_size: null
@@ -128,6 +129,8 @@ model:
   use_cpu_initialization: False # Init weights on the CPU (slow for large models)
   onnx_safe: False # Use work-arounds for known problems with Torch ONNX exporter.
   apex_transformer_log_level: 30 # Python logging level displays logs with severity greater than or equal to this
+  overlap_p2p_comm: True # Overlap p2p communication with computes
+  batch_p2p_comm: False # Batch consecutive inter-peer send/recv operations
 
   # Nsys profiling options
   nsys_profile:
