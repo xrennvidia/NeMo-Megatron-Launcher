@@ -39,9 +39,9 @@ base_results_dir: ${results.base}/${results.dir}  # Location to store the result
 container_mounts: # List of additional paths to mount to container. They will be mounted to same path.
   - ${code}:/opt/NeMo
 
-#container: nvcr.io/ea-bignlp/bignlp-training:23.02-py3
+#container: nvcr.io/ea-bignlp/nemofw-training:23.05-py3
 #container: nvcr.io/nvidian/nemo-nightly:latest-nightly-main
-container: gitlab-master.nvidia.com/xren/nemo_megatron_perf_optimization:nemo_nightly_cp_230608
+container: gitlab-master.nvidia.com/xren/nemo_megatron_perf_optimization:nemo_nightly_cp_debug_230608
 
 wandb_api_key_file: ${launcher_scripts_path}/../wandb/wandb_api_key  # File where the w&B api key is stored. Key must be on the first line.
 
@@ -54,7 +54,6 @@ env_vars:
   NCCL_PROTO: null # Protocol NCCL will use. Set to "simple" for AWS
   TRANSFORMERS_OFFLINE: 1
   NCCL_AVOID_RECORD_STREAMS: 1
-  NVTE_BATCH_MHA_P2P_COMM: 0
 
 # GPU Mapping
 numa_mapping:
