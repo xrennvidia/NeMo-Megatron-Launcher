@@ -28,8 +28,8 @@ results:
 code: /home/xren/my_work/nemo_megatron/nemo/NeMo
 
 #preproc_data: /lustre/fsw/joc/big_nlp/t5/dataset/Pile # T5 dataset
-preproc_data: /lustre/fsw/joc/big_nlp/gpt3/prepare_dataset/the_pile/train # GPT3 dataset in selene
-#preproc_data: /lustre/fsw/bignlp/dataset/the_pile_gpt3 # GPT3 dataset in preos
+#preproc_data: /lustre/fsw/joc/big_nlp/gpt3/prepare_dataset/the_pile/train # GPT3 dataset in selene
+preproc_data: /lustre/fsw/bignlp/dataset/the_pile_gpt3 # GPT3 dataset in preos
 
 cluster_type: bcm  # bcm or bcp. If bcm, it must match - cluster above.
 # Path to NeMo Megatron Launch scripts, should ends with /launcher_scripts
