@@ -24,6 +24,7 @@ from nemo.collections.nlp.models.language_modeling.megatron_gpt_model import Meg
 from nemo.collections.nlp.modules.common.megatron.megatron_init import fake_initialize_model_parallel
 from nemo.collections.nlp.modules.common.text_generation_utils import generate, get_computeprob_response
 from nemo.collections.nlp.parts.nlp_overrides import NLPDDPStrategy, NLPSaveRestoreConnector
+from nemo.collections.common.tokenizers.sentencepiece_tokenizer import SentencePieceTokenizer
 from nemo.utils import logging
 from nemo.utils.app_state import AppState
 from nemo.utils.get_rank import is_global_rank_zero
@@ -35,11 +36,11 @@ from torch.utils.data.dataloader import default_collate
 
 
 class RequestDataset(Dataset):
-    def __init__(self, requests, tokenizer) -> None:
+    def __init__(self, requests, tokenizer, max_length=2048) -> None:
         super().__init__()
         self.requests = requests
         self.tokenizer = tokenizer
-        self.max_length = 2048
+        self.max_length = max_length
 
     def __len__(self):
         return len(self.requests)
@@ -48,6 +49,9 @@ class RequestDataset(Dataset):
         context, continuation = self.requests[index]
         context_enc = self.tokenizer.text_to_ids(context) if isinstance(context, str) else context
         continuation_enc = self.tokenizer.text_to_ids(continuation) if isinstance(continuation, str) else continuation
+        if isinstance(self.tokenizer, SentencePieceTokenizer):
+            continuation_enc = continuation_enc[1:]
+
         # sanity check
         assert len(context_enc) > 0
         assert len(continuation_enc) > 0
@@ -148,12 +152,29 @@ def DDP_initialize(model):
             logging.info(f'Setting up transformer engine modules for tensor parallelism.')
             if model.cfg.get('megatron_amp_O2', 'False'):
                 # when using O2 additional module key is added that casts the weights
-                for layer in model.model.module.language_model.encoder.layers:
-                    layer.set_tensor_parallel_group(parallel_state.get_tensor_model_parallel_group())
+                if model.cfg.get('mcore_gpt', False):
+                    for layer in model.model.module.decoder.layers:
+                        layer.set_tensor_parallel_group(parallel_state.get_tensor_model_parallel_group())
+                else:
+                    for layer in model.model.module.language_model.encoder.layers:
+                        layer.set_tensor_parallel_group(parallel_state.get_tensor_model_parallel_group())
 
             else:
-                for layer in model.model.language_model.encoder.layers:
-                    layer.set_tensor_parallel_group(parallel_state.get_tensor_model_parallel_group())
+                if model.cfg.get('mcore_gpt', False):
+                    for module in model.get_gpt_module_list():
+                        """Set TP group
+                        Copied from: https://github.com/NVIDIA/TransformerEngine/blob/main/transformer_engine/pytorch/transformer.py#L398
+                        """
+                        # Deep iterate but skip self to avoid infinite recursion.
+                        for index, child in enumerate(module.modules()):
+                            if index == 0:
+                                continue
+                            if hasattr(child, "set_tensor_parallel_group"):
+                                tp_group = parallel_state.get_tensor_model_parallel_group()
+                                child.set_tensor_parallel_group(tp_group)
+                else:
+                    for layer in model.model.language_model.encoder.layers:
+                        layer.set_tensor_parallel_group(parallel_state.get_tensor_model_parallel_group())
 
 
 class NeMo_GPT3LM_TP_PP(LM):
@@ -167,12 +188,8 @@ class NeMo_GPT3LM_TP_PP(LM):
         self.model.eval()
 
         self.max_length = self.model.cfg.get("max_position_embeddings")
-        assert self.tokenizer.text_to_ids("hello\n\nhello") == [
-            31373,
-            198,
-            198,
-            31373,
-        ], "Tokenizer text_to_ids is not working as expected."
+        self.pad_id = self.tokenizer.pad_id
+        self.eos_id = self.tokenizer.eos_id
 
         self.truncate = truncate
         self.batch_size = batch_size
@@ -202,7 +219,8 @@ class NeMo_GPT3LM_TP_PP(LM):
     """
 
     def _loglikelihood(self, requests):
-        def pad_collate(batch, eos_id=50256):
+        def pad_collate(batch):
+            eos_id = self.eos_id
             tokens = [item[0] for item in batch]
             conti_lens = [item[1] for item in batch]
             lens = [len(token) - 1 for token in tokens]  # fake delete last token by reducing input len
@@ -241,7 +259,7 @@ class NeMo_GPT3LM_TP_PP(LM):
             return -len(toks), tuple(toks)
 
         reord = utils.Reorderer(requests, _collate)
-        request_ds = RequestDataset(reord.get_reordered(), self.model.tokenizer)
+        request_ds = RequestDataset(reord.get_reordered(), self.model.tokenizer, self.max_length)
         request_dl = DataLoader(request_ds, collate_fn=pad_collate, batch_size=self.batch_size, shuffle=False)
 
         def logits_to_results(batch, response):
@@ -290,6 +308,7 @@ class NeMo_GPT3LM_TP_PP(LM):
                 top_k=0,
                 top_p=0.9,
                 greedy=True,
+                compute_logprob=True,
                 repetition_penalty=1.0,
                 min_tokens_to_generate=0,
             )
@@ -313,7 +332,7 @@ class NeMo_GPT3LM_TP_PP(LM):
                     utils.make_disjoint_window,
                     utils.get_rolling_token_windows(
                         token_list=self.tokenizer.text_to_ids(string),
-                        prefix_token=50256,
+                        prefix_token=self.eos_id,
                         max_seq_len=self.max_length,
                         context_len=1,
                     ),

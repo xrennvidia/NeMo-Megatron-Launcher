@@ -21,6 +21,8 @@ import re
 import shlex
 import shutil
 import warnings
+from omegaconf import OmegaConf, DictConfig
+import yaml
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Set, Union
 
@@ -70,6 +72,7 @@ class AutoLauncher:
             "bcm": SlurmLauncher,
             "bcp": BCPLauncher,
             "interactive": InteractiveLauncher,
+            "k8s": K8SLauncher,
         }
 
 
@@ -114,6 +117,7 @@ class Launcher:
             on interactive cluster, it's a bash file, trigger with bash.
             on slurm cluster, it's a slurm script file, trigger with sbatch.
             on BCP cluster, it's a BCP script file, trigger with bash.
+            on k8s cluster, it's a Helm chart, triggered with helm.
 
         :param List[List[str]] command_groups: Command groups to launch with
         :return: job id on slurm based system otherwise empty string
@@ -431,6 +435,70 @@ class SlurmLauncher(Launcher):
         return output.group("id")
 
 
+class K8SLauncher(Launcher):
+    """
+    K8s job launcher
+    This class is used to hold the parameters to run a job on kubernetes.
+    In practice, it will create a Helm chart in the specified directory for the job
+    and trigger the job with `bash` command.
+
+    :param Union[Path, str] folder: folder for storing job submission/output and logs.
+    :param str job_name: Name of the job, used as job folder name
+    :param Any **kwargs: Parse other cluster parameters required for k8s running,
+        including `nodes`, `ntasks_pernode`, `bcp_launcher`, etc.
+    """
+
+    def __init__(self, folder: Union[Path, str], job_name: str, **kwargs: Any) -> None:
+        super().__init__(folder, job_name)
+        self.parameters = kwargs
+        self.parameters = self._convert_parameters(self.parameters)
+
+    @classmethod
+    def _equivalence_dict(cls):
+        return {
+            "name": "job_name",
+            "nodes": "nnodes",
+            "tasks_per_node": "npernode",
+            "ntasks_per_node": "npernode",
+        }
+
+    def _convert_parameters(self, params: Dict[str, Any]) -> Dict[str, Any]:
+        """translate k8s parameter names"""
+        # replace type in some cases
+        eq_dict = self._equivalence_dict()
+        if eq_dict is not None:
+            params = {eq_dict.get(k, k): v for k, v in params.items()}
+        return params
+
+    def _submit_command(self, submission_file_path: Path) -> str:
+        """Launch the submission command"""
+        command_list = self._make_submission_command(submission_file_path)
+        # run
+        job_utils.CommandFunction(command_list, ret_stdout=False, verbose=False)()  # explicit errors
+        return ""
+
+    @staticmethod
+    def _make_submission_command(submission_file_path: Path) -> List[str]:
+        """Make a command to trigger submission script. On a k8s cluster, the script is triggerred with Helm"""
+        return ["bash", str(submission_file_path)]
+
+    def _make_submission_file_text(self, command_groups: List[List[str]]) -> str:
+        """
+        Generate the script to launch the Helm chart.
+        A very simple bash script is generated which runs `helm install` for the
+        Helm chart that was generated.
+
+        :param List[List[str]] command_groups: Command groups to launch with
+        :return: submission script file's text
+        :rtype: str
+        """
+        paths = job_utils.JobPaths(folder=self.folder, job_name=self.job_name)
+        helm_charts = paths.folder / 'k8s_template'
+        job_name = self.job_name.replace('_', '-')
+
+        return f'#!/bin/bash\nhelm install {job_name} {helm_charts}\n'
+
+
 @functools.lru_cache()
 def _get_default_parameters() -> Dict[str, Any]:
     """Parameters that can be set through update_parameters"""
@@ -446,8 +514,8 @@ def _make_sbatch_string(
     job_name: str = "nemo_launcher",
     partition: Optional[str] = None,
     time: int = 5,
-    nodes: int = 1,
-    ntasks_per_node: Optional[int] = None,
+    nodes: Union[int, List[int]] = 1,
+    ntasks_per_node: Optional[Union[int, List[int]]] = None,
     cpus_per_task: Optional[int] = None,
     cpus_per_gpu: Optional[int] = None,
     num_gpus: Optional[int] = None,  # legacy
@@ -471,6 +539,7 @@ def _make_sbatch_string(
     container_mounts: Optional[str] = None,
     additional_parameters: Optional[Dict[str, Any]] = None,
     srun_args: Optional[Iterable[str]] = None,
+    heterogeneous: bool = False,
 ) -> str:
     """Creates the content of an sbatch file with provided parameters
 
@@ -510,6 +579,7 @@ def _make_sbatch_string(
         "container_image",
         "container_mounts",
         "srun_args",
+        "heterogeneous",
     ]
     parameters = {k: v for k, v in locals().items() if v is not None and k not in nonslurm}
     # rename and reformat parameters
@@ -541,8 +611,26 @@ def _make_sbatch_string(
         parameters.update(additional_parameters)
     # now create
     lines = ["#!/bin/bash", "", "# Parameters"]
-    for k in sorted(parameters):
-        lines.append(_as_sbatch_flag(k, parameters[k]))
+    if heterogeneous:
+        for i in range(len(nodes)):
+            het_parameters = parameters.copy()
+            het_parameters["output"] = parameters["output"].replace("_%j", f"_{i}_%j")
+            if "error" in parameters:
+                het_parameters["error"] = parameters["error"].replace("_%j", f"_{i}_%j")
+            het_parameters.update(
+                {
+                    "job_name": f"{job_name}_{i}",
+                    "nodes": nodes[i],
+                    "ntasks_per_node": ntasks_per_node[i],
+                }
+            )
+            for k in sorted(parameters):
+                lines.append(_as_sbatch_flag(k, het_parameters[k]))
+            if i != len(nodes) -1:
+                lines.append(f"#SBATCH hetjob")
+    else:
+        for k in sorted(parameters):
+            lines.append(_as_sbatch_flag(k, parameters[k]))
     # environment setup:
     if setup is not None:
         lines += ["", "# setup"] + setup
@@ -572,15 +660,35 @@ def _make_sbatch_string(
         ]
 
     for group_ind, command_group in enumerate(command_groups):
-        srun_cmd = shlex.join(["srun", "--output", stdout, *stderr_flags, *container_flags, *srun_args])
-        command = ";\n  ".join(command_group)
-        lines += [
-            "",
-            f"# command {group_ind + 1}",
-            f"{srun_cmd} bash -c \"",
-            f"  {command} \"",
-            "",
-        ]
+        if heterogeneous:
+            het_group = f"--het-group={group_ind}"
+            het_stdout = stdout.replace("_%j", f"_{group_ind}_%j")
+            het_stderr = stderr_flags.copy()
+            if het_stderr:
+                het_stderr[-1] = het_stderr[-1].replace("_%j", f"_{group_ind}_%j")
+            srun_cmd = shlex.join(["srun", "--output", het_stdout, *het_stderr, *container_flags, *srun_args, het_group])
+            command = ";\n  ".join(command_group)
+            lines += [
+                "",
+                f"# command {group_ind + 1}",
+                f"{srun_cmd} bash -c \"",
+                f"  {command} \" &",
+                "",
+            ]
+            if group_ind == len(nodes) - 1:
+                lines += ["wait"]
+            else:
+                lines += ["sleep 30"]
+        else:
+            srun_cmd = shlex.join(["srun", "--output", stdout, *stderr_flags, *container_flags, *srun_args])
+            command = ";\n  ".join(command_group)
+            lines += [
+                "",
+                f"# command {group_ind + 1}",
+                f"{srun_cmd} bash -c \"",
+                f"  {command} \"",
+                "",
+            ]
     return "\n".join(lines)
 
 
