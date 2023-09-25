@@ -24,11 +24,10 @@ preproc_data: /lustre/fsw/joc/big_nlp/gpt3/prepare_dataset/the_pile/train # GPT3
 cluster_type: bcm  # bcm or bcp
 auto_configurator_path: ${nemo_launcher_code}/auto_configurator  # Path to the location of auto_configurator codebase.
 launcher_scripts_path: ${auto_configurator_path}/../launcher_scripts
-fastertransformer_path: ${auto_configurator_path}/../FasterTransformer
 base_results_dir: ${results.base}/${results.dir}
 data_dir: ${preproc_data}
 
-training_container: nvcr.io/ea-bignlp/nemofw-training:23.05-py3
+training_container: nvcr.io/ea-bignlp/ga-participants/nemofw-training:23.08.02
 container_mounts:
     - ${nemo_code}:/opt/NeMo
 

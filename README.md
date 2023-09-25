@@ -117,7 +117,13 @@ The most recent version of the README can be found at [https://ngc.nvidia.com/co
       - [5.9.2.1. Common](#5921-common)
       - [5.9.2.2. Slurm](#5922-slurm)
       - [5.9.2.3. Base Command Platform](#5923-base-command-platform)
-    + [5.9.3. Fine-tuning on Custom Tasks](#593-fine-tuning-on-custom-tasks)
+    + [5.9.3. GPT Supervised Fine-tuning](#593-gpt-supervised-fine-tuning)
+      - [5.9.3.1. Common](#5931-common)
+      - [5.9.3.2. Slurm](#5932-slurm)
+      - [5.9.3.3. Base Command Platform](#5933-base-command-platform)
+    + [5.9.4. Fine-tuning on Custom Tasks](#594-fine-tuning-on-custom-tasks)
+      - [5.9.4.1. T5 and mT5](#5941-t5-and-mt5)
+      - [5.9.4.2. GPT](#5942-gpt)
   * [5.10. Model Prompt Learning](#510-model-prompt-learning)
     + [5.10.1. GPT Prompt Learning](#5101-gpt-prompt-learning)
       - [5.10.1.1. Common](#51011-common)
@@ -137,7 +143,15 @@ The most recent version of the README can be found at [https://ngc.nvidia.com/co
       - [5.11.2.2. Slurm](#51122-slurm)
       - [5.11.2.3. Base Command Platform](#51123-base-command-platform)
   * [5.12 LoRA Model and Generalized PEFT Framework](#512-lora-model-and-generalized-peft-framework)
-    + [5.12.1 PEFT Training and Inference](#5121-peft-training-and-inference)
+    + [5.12.1 PEFT Training and Inference for GPT-style Models](#5121-peft-training-and-inference-for-gpt-style-models)
+      - [5.12.1.1 PEFT Training and Inference](#51211-peft-training-and-inference)
+      + [5.12.1.2 PEFT Training with NeMo Megatron Launcher](#51212-peft-training-with-nemo-megatron-launcher)
+        - [5.12.1.2.1 Common](#512121-common)
+        - [5.12.1.2.2 Slurm](#512122-slurm)
+        - [5.12.1.2.3 Base Command Platform](#512123-base-command-platform)
+      - [5.12.2 PEFT Training and Inference for mT5/T5-style Models](#5122-peft-training-and-inference-for-mt5-t5-style-models)
+      - [5.12.2.1 PEFT Training and Inference](#51221-peft-training-and-inference)
+    + [5.12.1 PEFT Training and Inference for GPT-style Models](#5121-peft-training-and-inference-for-gpt-style-models)
   * [5.13. Model Evaluation](#513-model-evaluation)
     + [5.13.1. GPT Evaluation](#5131-gpt-evaluation)
       - [5.13.1.1. Common](#51311-common)
@@ -187,15 +201,16 @@ The most recent version of the README can be found at [https://ngc.nvidia.com/co
   * [5.16. Reinforcement Learning from Human Feedback](#516-reinforcement-learning-from-human-feedback)
     + [5.16.1. Reward Model Training](#5161-reward-model-training)
       - [5.16.1.1 Data preprocessing](#51611-data-preprocessing)
-      - [5.16.1.2 Reward Model Training](#51612-reward-model-training)
+      - [5.16.1.2 Training a Reward Model](#51612-training-a-reward-model)
       - [5.16.1.3 Reward Model Evaluation](#51613-reward-model-evaluation)
     + [5.16.2. PPO Training](#5162-ppo-training)
       - [5.16.2.1 Launching the Reward Model Inference Server](#51621-launching-the-reward-model-inference-server)
       - [5.16.2.2 Launching the Initial Policy Inference Server](#51622-launching-the-initial-policy-inference-server)
       - [5.16.2.3 Launching the PPO Critic Training and Inference Server](#51623-launching-the-ppo-critic-training-and-inference-server)
       - [5.16.2.4 Launching the PPO Actor Training](#51624-launching-the-ppo-actor-training)
-      - [5.16.2.5 Launching every job at once with SLURM](#51625-launching-every-job-at-once-with-slurm)
-      - [5.16.2.6 PPO Hyper-parameters](#51626-ppo-hyper-parameters)
+      - [5.16.2.5 Launching all jobs at once with SLURM](#51625-launching-all-jobs-at-once-with-slurm)
+      - [5.16.2.6 Ensuring consistency between jobs](#51626-ensuring-consistency-between-jobs)
+      - [5.16.2.7 PPO Hyper-parameters](#51627-ppo-hyper-parameters)
     + [5.16.3. Future Work](#5163-future-work)
   * [5.17 Curating pretraining datasets with the NeMo Data Curator](#517-curating-pretraining-datasets-with-the-nemo-data-curator)
 - [6. Deploying the NeMo Megatron Model](#6-deploying-the-nemo-megatron-model)
@@ -342,25 +357,25 @@ Figure 1: The GPT family architecture. The 5B variant includes 24 transformer la
 ### 3.1. Support Matrix
 <a id="markdown-support-matrix" name="support-matrix"></a>
 
-| Software                | Version          |
-|-------------------------|------------------|
-| NVIDIA Triton           | 2.24.0           |
-| FasterTransformer       | v5.3+c6e8f60     |
-| TransformerEngine       | v0.8+8e5f00f     |
-| PyTorch                 | 2.1.0a0+fe05266  |
-| NeMo                    | 1.19.0+913e5e5   |
-| PyTorch Lightning       | 1.9.4            |
-| Hydra                   | 1.2.0            |
-| CUDA                    | NVIDIA CUDA 12.1 |
-| cuBLAS                  | 12.1.3.1         |
-| cuDNN                   | 8.9.0.131        |
-| NCCL                    | 2.17.1           |
-| Container OS            | Ubuntu 20.04     |
-| rdma-core               | 36.0             |
-| GDRcopy                 | 2.3              |
-| HPC-X                   | 2.13             |
-| Base Command Manager    | 1.0.0            |
-| DeepOps                 | 21.06            |
+| Software                | Version              |
+|-------------------------|----------------------|
+| NVIDIA Triton           | 2.37.0.9383150       |
+| TransformerEngine       | 0.13.0.dev0+a03f8bc  |
+| MegatronCore            | 0.3.0+ab0336a        |
+| PyTorch                 | 2.1.0a0+29c30b1      |
+| NeMo                    | 1.21.0+b850d14       |
+| PyTorch Lightning       | 2.0.7                |
+| Hydra                   | 1.2.0                |
+| CUDA                    | NVIDIA CUDA 12.2     |
+| cuBLAS                  | 12.2.5.1             |
+| cuDNN                   | 8.9.4.25             |
+| NCCL                    | 2.18.3               |
+| Container OS            | Ubuntu 22.04         |
+| rdma-core               | 39.0                 |
+| GDRcopy                 | 2.3                  |
+| HPC-X                   | 2.15                 |
+| Base Command Manager    | 1.0.0                |
+| DeepOps                 | 21.06                |
 
 ## 4. Cloud Service Providers
 <a id="markdown-cloud-service-providers" name="cloud-service-providers"></a>
@@ -1961,7 +1976,7 @@ launcher_scripts_path: ${auto_configurator_path}/../launcher_scripts
 fastertransformer_path: ${auto_configurator_path}/../FasterTransformer
 base_results_dir: ${auto_configurator_path}/results
 data_dir: ${launcher_scripts_path}/data
-training_container: nvcr.io/ea-bignlp/nemofw-training:23.05-py3
+training_container: nvcr.io/ea-bignlp/ga-participants/nemofw-training:23.08.02
 container_mounts:
     - null
 wandb:  # Weights and Biases (W&B) logging.
@@ -2937,7 +2952,7 @@ Any other parameter can also be added to the command to modify its behavior.
 <a id="markdown-model-fine_tuning" name="model-fine_tuning"></a>
 
 We also provide an easy-to-use tool to help fine-tuning the trained checkpoints
-on SQuAD for T5 models and on XQuAD for mT5 models. Fine-tuning for GPT models is not supported.
+on SQuAD for T5 and GPT models, and on XQuAD for mT5 models.
 
 #### 5.9.1. T5 Fine-tuning
 <a id="markdown-t5-fine_tuning" name="t5-fine_tuning"></a>
@@ -3026,8 +3041,8 @@ fine_tuning.model.restore_from_path=/mount/results/t5_220m/convert_nemo/results/
 >> /results/finetune_t5_log.txt 2>&1
 ```
 
-The command above assumes you mounted the data workspace in /mount/data, and the results workspace in /mount/results. 
-The stdout and stderr outputs will also be redirected to the /results/finetune_t5_log.txt file, to be able to download the logs from NGC.
+The command above assumes you mounted the data workspace in `/mount/data`, and the results workspace in `/mount/results`. 
+The stdout and stderr outputs will also be redirected to the `/results/finetune_t5_log.txt` file, to be able to download the logs from NGC.
 Any other parameter can also be added to the command to modify its behavior.
 
 
@@ -3120,15 +3135,107 @@ The command above assumes you mounted the data workspace in /mount/data, and the
 The stdout and stderr outputs will also be redirected to the /results/finetune_mt5_log.txt file, to be able to download the logs from NGC.
 Any other parameter can also be added to the command to modify its behavior.
 
-#### 5.9.3. Fine-tuning on Custom Tasks
-<a id="markdown-fine-tuning-on-custom-tasks" name="fine-tuning-on-custom-tasks"></a>
-We also support fine-tuning on custom down-stream tasks in T5 and mT5. In order to benchmark on your own
-dataset, you are required to split the original dataset into two files, i.e. a txt file corresponding to the 
-source (context) data, and txt file corresponding to the target data. Each line of these two files forms a 
-fine-tuning sample.
+#### 5.9.3. GPT Supervised Fine-tuning
+<a id="markdown-gpt-supervised-fine_tuning" name="gpt-supervised-fine_tuning"></a>
 
-Custom fine-tuning configuration files can be found in `conf/fine_tuning/t5/custom_task.yaml` for T5 models
-and `conf/fine_tuning/mt5/custom_task.yaml` for mT5 models. The essential parameters are listed below. You need
+
+The configuration used for the supervised fine-tuning needs to be specified in the
+`conf/config.yaml` file, specifying the `fine_tuning` parameter, which specifies the
+file to use for fine-tuning purposes. The `fine_tuning` parameter must be included in `stages` 
+to run the fine-tuning pipeline. To fine-tune checkpoint on `squad` task, set
+`fine_tuning` parameter to `gpt3/squad`, which can be found in `conf/fine_tuning/gpt3/squad.yaml`. 
+The provided hyper parameters are only optimized for GPT 126M model on `squad` task.
+
+##### 5.9.3.1. Common
+<a id="markdown-common" name="common"></a>
+To specify the configuration for what tasks to run for fine_tuning, 
+use the `run.task_name` parameter. 
+And use all the `run` parameters to define the job specific config:
+```yaml
+run:
+    name: ${.task_name}_${.model_train_name}
+    time_limit: "04:00:00"
+    dependency: "singleton"
+    convert_name: convert_nemo
+    model_train_name: gpt3_126m
+    task_name: "squad"
+    results_dir: ${base_results_dir}/${fine_tuning.run.model_train_name}/${fine_tuning.run.task_name}
+```
+
+To specify which model checkpoint to load and its definition, use the `model` parameter:
+
+```yaml
+model:
+    restore_from_path: ${base_results_dir}/${fine_tuning.run.model_train_name}/${fine_tuning.run.convert_name}/megatron_gpt.nemo # Path to a trained GPT .nemo file
+    tensor_model_parallel_size: 1
+    pipeline_model_parallel_size: 1
+```
+
+##### 5.9.3.2. Slurm
+<a id="markdown-slurm" name="slurm"></a>
+
+Set configuration for a Slurm cluster in the `conf/cluster/bcm.yaml` file:
+
+```yaml
+partition: null
+account: null
+exclusive: True
+gpus_per_task: null
+gpus_per_node: 8
+mem: 0
+overcommit: False
+job_name_prefix: "nemo-megatron-"
+```
+
+**Example:**
+
+To run only the fine-tuning pipeline and not the data preparation, training, 
+conversion or inference pipelines set the `conf/config.yaml` file to:
+
+```yaml
+stages:
+  - fine_tuning
+```
+
+then run:
+```
+python3 main.py
+```
+
+##### 5.9.3.3. Base Command Platform
+<a id="markdown-base-command-platform" name="base-command-platform"></a>
+In order to run the fine-tuning script on Base Command Platform, set the
+`cluster_type` parameter in `conf/config.yaml` to `bcp`. This can also be overridden
+from the command line, using hydra. The evaluation script must be launched in a multi-node job.
+
+To run the fine-tuning pipeline to fine-tune a 126M GPT model converted checkpoint stored in 
+`/mount/results/gpt3_126m/convert_nemo`, run:
+```
+python3 /opt/NeMo-Megatron-Launcher/launcher_scripts/main.py fine_tuning=gpt3/squad stages=[fine_tuning] \
+ cluster_type=bcp \
+launcher_scripts_path=/opt/NeMo-Megatron-Launcher/launcher_scripts data_dir=/mount/data base_results_dir=/mount/results \
+fine_tuning.run.model_train_name=gpt3_126m \
+fine_tuning.model.restore_from_path=/mount/results/gpt_sft/convert_nemo/results/megatron_gpt.nemo \
+>> /results/finetune_gpt3_log.txt 2>&1
+```
+
+The command above assumes you mounted the data workspace in `/mount/data`, and the results workspace in `/mount/results`. 
+The stdout and stderr outputs will also be redirected to the `/results/finetune_gpt3_log.txt` file, to be able to download the logs from NGC.
+Any other parameter can also be added to the command to modify its behavior.
+
+
+
+#### 5.9.4. Fine-tuning on Custom Tasks
+<a id="markdown-fine-tuning-on-custom-tasks" name="fine-tuning-on-custom-tasks"></a>
+We also support fine-tuning on custom down-stream tasks in T5, mT5 and GPT. 
+
+
+##### 5.9.4.1. T5 and mT5
+<a id="markdown-t5-and-mt5" name="t5-and-mt5"></a>
+In order to benchmark on your own dataset, you are required to split the original dataset into two files for T5 and mT5, i.e. a txt file corresponding to the 
+source (context) data, and txt file corresponding to the target data. Each line of these two files forms a fine-tuning sample.
+
+Custom fine-tuning configuration files can be found in `conf/fine_tuning/t5/custom_task.yaml` for T5 models and `conf/fine_tuning/mt5/custom_task.yaml` for mT5 models. The essential parameters are listed below. You need
 to specify the dataset paths and preferred benchmark metrics.
 ```yaml
   data:
@@ -3146,6 +3253,47 @@ to specify the dataset paths and preferred benchmark metrics.
 ```
 You can follow the instructions in T5 and mT5 fine-tuning sections to submit a custom task job.
 
+
+##### 5.9.4.2. GPT
+<a id="markdown-gpt" name="gpt"></a>
+To benchmark on your own dataset, you must supply the original data in a .jsonl format. This means providing a .jsonl file that contains the fine-tuning samples, where each sample comprises an `input` (which is represented by both context and query) and an `output` (the target answer). Each line in the file should constitute one fine-tuning sample.
+
+```
+{
+  "input": "Which NFL team represented the AFC at Super Bowl 50? Super_Bowl_50 Paragraph: Super Bowl 50 was an American football game to determine the champion of the National Football League (NFL) for the 2015 season. The American Football Conference (AFC) champion Denver Broncos defeated the National Football Conference (NFC) champion Carolina Panthers 24\u201310 to earn their third Super Bowl title. The game was played on February 7, 2016, at Levi's Stadium in the San Francisco Bay Area at Santa Clara, California. As this was the 50th Super Bowl, the league emphasized the \"golden anniversary\" with various gold-themed initiatives, as well as temporarily suspending the tradition of naming each Super Bowl game with Roman numerals (under which the game would have been known as \"Super Bowl L\"), so that the logo could prominently feature the Arabic numerals 50.",
+  "output": "Denver Broncos"
+  ...
+  }
+```
+
+Custom supervised fine-tuning configuration files can be found in `conf/fine_tuning/gpt3/custom_task.yaml` for GPT models. The essential parameters are listed below. You need to specify the dataset paths, preferred benchmark metrics and sampling probabilities from each training dataset when `strategy='random'`.
+
+```yaml
+  data:
+    train_ds:
+      # Example of how to specify paths to multiple datasets
+      # file_names: 
+      #   - /path/to/squad.jsonl
+      #   - /path/to/mnli.jsonl
+      #   - /path/to/boolq.jsonl
+      # Example of how each dataset is formatted
+      # {'input': 'John von Neumann\nVon Neumann made fundamental contributions .... Q: What did the math of artificial viscosity do?', 'output': 'smoothed the shock transition without sacrificing basic physics'}
+      file_names: ??? # Path to a list of JSONL files corresponding to the source data.
+      # Example of how to specify concat_sampling_probabilities
+      # concat_sampling_probabilities:
+      #   - 0.5
+      #   - 0.25
+      #   - 0.25
+      concat_sampling_probabilities: ??? # When providing a list of datasets, this arg defines the sampling probabilities from each dataset when strategy='random'
+
+    validation_ds:
+      file_names: ??? # Path to a list of JSONL files corresponding to the source data. Data format is identical to train_ds.
+      metric:
+        name: "loss" # Name of the evaluation metric to use. Options: ['exact_string_match', 'loss']
+        average: null # Average the metric over the dataset. Options: ['macro', 'micro']. Works only for 'F1', 'accuracy' etc. Refer to torchmetrics for metrics where this is supported.
+        num_classes: null
+```
+You can follow the instructions in GPT supervised fine-tuning sections to submit a custom task job.
 
 
 ### 5.10. Model Prompt Learning
@@ -3597,11 +3745,13 @@ Any other parameter can also be added to the command to modify its behavior.
 
 ### 5.12 LoRA Model and Generalized PEFT Framework
 <a id="markdown-peft-model" name="lora-peft-framework"></a>
-Many Parameter Efficient Fine-Tuning (PEFT) models have overlapping functionalities. In order to enhance NeMo's codebase, we have worked towards unifying the implementation of all supported PEFT methods, making it more streamlined. Furthermore, we have introduced the Low-rank Adapter PEFT model for GPT-style base models in NeMo.
+Many Parameter Efficient Fine-Tuning (PEFT) models have overlapping functionalities. In order to enhance NeMo's codebase, we have worked towards unifying the implementation of all supported PEFT methods, making it more streamlined. Furthermore, we have introduced the Low-rank Adapter PEFT model for GPT-style and mT5/T5-style base models in NeMo.
 
+
+#### 5.12.1 PEFT Training and Inference for GPT-style Models
 The new PEFT framework is built upon the SFT models and datasets, thereby inheriting all the dataset preparation requirements from SFT. For more details, please refer to the SFT section below.
 
-#### 5.12.1 PEFT Training and Inference
+##### 5.12.1.1 PEFT Training and Inference
 We offer a training and inference script in NeMo. Below is an example of how to use the training script. The `TRAIN_FILE`s (and `VALIDATION_FILE`s) follow the same format as SFT.
 
 Take note of the `model.peft.peft_scheme` argument. You can train a LoRA, P-tuning, Adapter, or IA3 model by setting this argument to the desired PEFT method.
@@ -3630,6 +3780,185 @@ inference.greedy=True \
 inference.outfile_path=<OUTPUT_FILE>
 ```
 Additionally, NeMo has a notebook which walks through the steps (which these scripts encapsulate) to train and run inference for PEFT models: https://github.com/NVIDIA/NeMo/blob/main/tutorials/nlp/lora.ipynb
+
+##### 5.12.1.2 PEFT Training with NeMo Megatron Launcher
+PEFT stage could launch PEFT methods including PTuning, LoRA, Adapters and IA3 in a single stage, by setting different peft scheme.
+It is implemented via adapter_mixins framework with a unify style.
+mix-n-match PEFT scheme like adapter_and_ptuning can be easily extended to do ia3_and_ptuning or lora_and_ptuning
+
+PTuning does not need to flexibility to insert prompt tokens anywhere in the input. This feature has been removed for simplicity.
+
+##### 5.12.1.2.1. Common
+<a id="markdown-common" name="common"></a>
+To specify the configuration for ptuning (LoRA, adapter or IA3 learning), 
+use all the `run` parameters to define the job specific config:
+```yaml
+run:
+  name: ${.task_name}_${.model_train_name}
+  time_limit: "04:00:00"
+  dependency: "singleton"
+  convert_name: convert_nemo
+  model_train_name: gpt3_1.3B
+  task_name: "squad"
+  results_dir: ${base_results_dir}/${.model_train_name}/ptuning_${.task_name}
+```
+
+To specify which language model checkpoint to load and its definition, use the `model` parameter:
+
+```yaml
+model:
+  language_model_path: ${base_results_dir}/${peft.run.model_train_name}/${peft.run.convert_name}/nemo_gpt1.3B_fp16.nemo
+  tensor_model_parallel_size: 2
+  pipeline_model_parallel_size: 1
+```
+
+##### 5.12.1.2.2 Slurm
+<a id="markdown-slurm" name="slurm"></a>
+
+Set configuration for a Slurm cluster in the `conf/cluster/bcm.yaml` file:
+
+```yaml
+partition: null
+account: null
+exclusive: True
+gpus_per_task: null
+gpus_per_node: 8
+mem: 0
+overcommit: False
+job_name_prefix: "nemo-megatron-"
+```
+
+**Example:**
+
+To run only the evaluation pipeline and not the data preparation, training, 
+conversion or inference pipelines set the `conf/config.yaml` file to:
+
+```yaml
+stages:
+  - peft
+```
+
+then run:
+```
+python3 main.py \
+    peft=gpt3/squad \
+    stages=["peft"] \
+    peft.model.peft.peft_scheme="ptuning" \
+    peft.model.megatron_amp_O2=False \
+    peft.model.restore_from_path=${LANGUAGE_MODEL_PATH}\
+    peft.exp_manager.exp_dir=${BASE_RESULTS_DIR}/${RUN_NAME}/ptuning \
+
+```
+##### 5.12.1.2.3 Base Command Platform
+<a id="markdown-base-command-platform" name="base-command-platform"></a>
+In order to run the ptuning learning script on Base Command Platform, set the
+`cluster_type` parameter in `conf/config.yaml` to `bcp` or `interactive`. This can also be overridden
+from the command line, using hydra. 
+
+To run the ptuning pipeline to nemo-megatron-gpt-1.3B model converted checkpoint, run:
+```bash
+export HYDRA_FULL_ERROR=1
+export TORCH_CPP_LOG_LEVEL=INFO NCCL_DEBUG=INFO
+  
+TRAIN="[/mount/workspace/databricks-dolly-15k-train.jsonl]"
+VALID="[/mount/workspace/databricks-dolly-15k-val.jsonl]"
+VALID_NAMES="[peft-squad]"
+CONCAT_SAMPLING_PROBS="[1]"
+ 
+PEFT_SCHEME="ptuning"
+PEFT_EXP_DIR="/results/nemo_launcher/ptuning"
+LOG_DIR="/results/nemo_launcher/ptuning_log"
+ 
+TP_SIZE=2
+ 
+PP_SIZE=1
+ 
+python3 /opt/NeMo-Megatron-Launcher/launcher_scripts/main.py \
+        peft=gpt3/squad \
+        stages=[peft] \
+        cluster_type=interactive \
+        launcher_scripts_path=/opt/NeMo-Megatron-Launcher/launcher_scripts \
+        peft.model.peft.peft_scheme=${PEFT_SCHEME} \
+        peft.trainer.precision=bf16 \
+        peft.trainer.max_steps=100 \
+        peft.trainer.devices=2 \
+        peft.trainer.val_check_interval=10 \
+        peft.model.megatron_amp_O2=False \
+        peft.model.restore_from_path=/mount/workspace/nemo_gpt1.3B_fp16.nemo \
+        peft.model.tensor_model_parallel_size=${TP_SIZE} \
+        peft.model.pipeline_model_parallel_size=${PP_SIZE} \
+        peft.model.optim.lr=5e-6 \
+        peft.model.answer_only_loss=True \
+        peft.model.data.train_ds.file_names=${TRAIN} \
+        peft.model.data.train_ds.micro_batch_size=1 \
+        peft.model.data.train_ds.global_batch_size=32 \
+        peft.model.data.train_ds.concat_sampling_probabilities=${CONCAT_SAMPLING_PROBS} \
+        peft.model.data.validation_ds.micro_batch_size=1 \
+        peft.model.data.validation_ds.global_batch_size=32 \
+        peft.model.data.validation_ds.file_names=${VALID} \
+        peft.model.data.validation_ds.names=${VALID_NAMES} \
+        peft.model.data.test_ds.micro_batch_size=1 \
+        peft.model.data.test_ds.global_batch_size=128 \
+        peft.model.data.train_ds.num_workers=0 \
+        peft.model.data.validation_ds.num_workers=0 \
+        peft.model.data.test_ds.num_workers=0 \
+        peft.model.data.validation_ds.metric.name=loss \
+        peft.model.data.test_ds.metric.name=loss \
+        peft.exp_manager.exp_dir=${PEFT_EXP_DIR} \
+        peft.exp_manager.explicit_log_dir=${LOG_DIR} \
+        peft.exp_manager.resume_if_exists=True \
+        peft.exp_manager.resume_ignore_no_checkpoint=True \
+        peft.exp_manager.create_checkpoint_callback=True \
+        peft.exp_manager.checkpoint_callback_params.monitor=validation_loss
+```
+
+The command above assumes you mounted the data workspace in `/mount/workspace/` (e.g. the example script uses databricks-dolly-15k dataset), and the results workspace in `/results`. The command needs set different peft.exp_manager.exp_dir for different PEFT jobs.
+The stdout and stderr outputs will also be redirected to the `/results/nemo_launcher/ptuning_log`, to be able to download the logs from NGC.
+Any other parameter can also be added to the command to modify its behavior.
+
+##### 5.12.2 PEFT Training and Inference for mT5/T5-style Models
+We offer training and inference scripts in NeMo for parameter efficient tuning of mT5/T5-style models. You can train a LoRA, P-tuning, Adapter, or IA3 model using its corresponding training and inference script. 
+
+##### 5.12.2.1 PEFT Training and Inference
+Below is an example of how to use the training scripts for adapter tuning. The `TRAIN_FILE`s (and `VALIDATION_FILE`s) follow the same format as SFT.
+
+```bash
+python /opt/NeMo/examples/nlp/language_modeling/tuning/megatron_t5_adapter_tuning.py \
+    model.language_model_path=<BASE_T5_MODEL> \
+    model.data.train_ds=[<TRAIN_FILE1>,<TRAIN_FILE2>,...] \
+    model.data.validation_ds=[<VALIDATION_FILE1>, <VALIDATION_FILE2>,...]
+```
+
+At the end of tuning, a '.nemo' model is generated which contains the parameters for the PEFT model.
+Similarly, the PEFT framework has an inference script as well:
+
+```bash
+python /data/NeMo/examples/nlp/language_modeling/tuning/megatron_t5_adapter_eval.py \
+    data.test_ds=[<TEST_FILE>] \
+    language_model_path=[BASE_T5_MODEL] \
+    adapter_model_file=[PEFT_MODEL] \
+    pred_file_path=<OUTPUT_FILE>
+```
+
+You can switch to IA3, P-tuning, or LoRA methods by using the same input arguments to a different script. Below is the table including filepaths for each PEFT method:
+
+| PEFT Method    | Filepath   | 
+| -------------- | ---------- | 
+| Adapter tuning |  ```/opt/NeMo/examples/nlp/language_modeling/tuning/megatron_t5_adapter_tuning.py```   | 
+| IA3 tuning     |  ```/opt/NeMo/examples/nlp/language_modeling/tuning/megatron_t5_ia3_tuning.py```   | 
+| P-tuning       | ```/opt/NeMo/examples/nlp/language_modeling/tuning/megatron_t5_prompt_learning.py```    | 
+| LoRA tuning    | ```/opt/NeMo/examples/nlp/language_modeling/tuning/megatron_t5_lora_tuning.py```    | 
+
+Similarly, the inference script filepaths are provided below:
+
+| PEFT Method    | Filepath   | 
+| -------------- | ---------- | 
+| Adapter tuning |  ```/opt/NeMo/examples/nlp/language_modeling/tuning/megatron_t5_adapter_eval.py```   | 
+| IA3 tuning     |  ```/opt/NeMo/examples/nlp/language_modeling/tuning/megatron_t5_ia3_eval.py```   | 
+| P-tuning       | ```/opt/NeMo/examples/nlp/language_modeling/tuning/megatron_t5_prompt_learning_eval.py```    | 
+| LoRA tuning    | ```/opt/NeMo/examples/nlp/language_modeling/tuning/megatron_t5_lora_eval.py```    | 
+
+
 ### 5.13. Model Evaluation
 <a id="markdown-model-evaluation" name="model-evaluation"></a>
 
@@ -4744,7 +5073,7 @@ SFT is the process of finetuning all of the model's parameters on supervised dat
 <a id="markdown-data-formatting" name="data-formatting"></a>
 To demonstrate how to format your SFT data, we'll take the Dolly dataset (https://github.com/databrickslabs/dolly) as an example, which consists of 15k instruction-context-response triples.
 
-First, to download the data, run `launcher_scripts/nemo_launcher/collections/dataprep_scripts/dolly_datapreep/download.py --path_to_save /path/to/save/data.jsonl`
+First, to download the data, run `launcher_scripts/nemo_launcher/collections/dataprep_scripts/dolly_dataprep/download.py --path_to_save /path/to/save/data.jsonl`
 
 The downloaded data `/path/to/save/data.jsonl` is formattated as a JSONL file with each line formatted as:
 
@@ -4857,9 +5186,9 @@ For finetuning dialogue dataset, we just need to add one extra configuration lin
 
 NeMo-RLHF is a library to fine-tune LLMs using Reinforcement Learning from Human Feedback (RLHF) in a scalable and fully distributed manner.
 
-NeMo-RLHF supports only GPT models and implements the Proximal Policy Optimization (PPO) algorithm. Support for other models and RL algorithms will be added in future releases. Furthermore, NeMo-RLHF is not currently integrated into NeMo-Megatron-Launcher, so the RLHF jobs must be launched directly from the NeMo-RLHF repository in `/opt/nemo-rlhf`, which should be copied to the local file system in the login node.
+NeMo-RLHF supports only GPT models and implements the Proximal Policy Optimization (PPO) algorithm. Support for other models and RL algorithms will be added in future releases. Furthermore, NeMo-RLHF is not currently integrated into NeMo-Megatron-Launcher, so the RLHF jobs must be launched directly from the NeMo-RLHF repository in `/opt/nemo-rlhf`, which should be copied to the local file system on the login node.
 
-We provide configurations to try RLHF on the newly released 2B GPT model with 4096 sequence length [available on HuggingFace](https://huggingface.co/nvidia/GPT-2B-001). We recommend users use the Anthropic HH-RLHF or the Stack Exchange Preferences datasets to get started.
+We provide configurations to try RLHF on the newly released 2B GPT model with 4096 sequence length [available on HuggingFace](https://huggingface.co/nvidia/GPT-2B-001). We recommend using the [Anthropic HH-RLHF](https://huggingface.co/datasets/Anthropic/hh-rlhf) or the [Stack Exchange Preferences](https://huggingface.co/datasets/HuggingFaceH4/stack-exchange-preferences) datasets to get started.
 
 #### 5.16.1. Reward Model Training
 <a id="markdown-reward-model-training" name="reward-model-training"></a>
@@ -4869,19 +5198,39 @@ NeMo-RLHF can be used to train your own reward model. The reward model is traine
 ##### 5.16.1.1 Data preprocessing
 <a id="markdown-data-preprocessing" name="data-preprocessing"></a>
 
-With your own or publicly available data, start by processing them into a jsonl format. This is where prefixes should be inserted. Then use the `preprocess_data_for_megatron.py` script to convert this jsonl format into the NeMo format. Format your pairwise comparison dataset with the following structure:
+With your own or publicly available data, start by processing them into a jsonl format.
+This is where you should format the prompt based on your specific needs and model. For instance, if your original data looks like
+```
+Human: Give me a tasty apple pie recipe
+AI: Sure! Here's how my grandma used to cook an awesome apple pie: (...)
+```
+then you may for instance turn it into
+```
+Setting:
+You are a helpful assistant that responds concisely.
+
+User:
+Give me a tasty apple pie recipe
+
+Assistant:
+Sure! Here's how my grandma used to cook an awesome apple pie: (...)
+```
+
+Format your pairwise comparison dataset with the following structure:
 
 ```
-{“text”: prompt1+good_response_1}
-{“text”: prompt1+bad_response_1}
-{“text”: prompt2+good_response_2}
-{“text”: prompt2+bad_response_2}
+{"text": prompt1+good_response_1}
+{"text": prompt1+bad_response_1}
+{"text": prompt2+good_response_2}
+{"text": prompt2+bad_response_2}
 ...
 ```
 
-where 1 and 2 are different prompts. Note that for the same prompt, prompt+good_response must come before prompt+bad_response in the dataset.
+where 1 and 2 are different prompts. Note that for the same prompt, prompt+good_response must come before prompt+bad_response in the dataset you generate.
+If you have prompts with more than two responses, you currently need to convert them into pairwise preferences (i.e., generate multiple pairs sharing the same prompt).
 
-For reference we used the following command for preprocessing the dataset using the SentencePiece tokenizer.
+Then use the `preprocess_data_for_megatron.py` script to convert this jsonl format into the NeMo format. 
+For reference we used the following command for preprocessing the dataset using the SentencePiece tokenizer:
 
 ```bash
 python3 /opt/NeMo/scripts/nlp_language_modeling/preprocess_data_for_megatron.py \
@@ -4895,55 +5244,67 @@ python3 /opt/NeMo/scripts/nlp_language_modeling/preprocess_data_for_megatron.py 
     --chunk_size=100 \
     --append-eod
 ```
-Which will generate files with `output_document.bin` and `output_document.idx` to use for reward model training.
+This generates files `output_text_document.bin` and `output_text_document.idx` to use for reward model training, described below.
 
-##### 5.16.1.2 Reward Model Training
-<a id="markdown-reward-model-training" name="reward-model-training"></a>
+##### 5.16.1.2 Training a Reward Model
+<a id="markdown-training-a-reward-model" name="training-a-reward-model"></a>
 
-To launch reward model training we first need to start with a pre-trained or fine-tuned nemo checkpoint. Our `training_rm.yaml` file has default configurations for the 2B model but feel free to use any model you like. An example command to begin training is:
+To launch reward model training we first need to start with a pre-trained or fine-tuned NeMo checkpoint. Our `training_rm.yaml` file has default settings for the 2B model but feel free to use any other model (adjusting the config accordingly). An example command to begin training is:
 
 ```bash
 cd /opt/nemo-rlhf \
 && export PYTHONPATH="/opt/nemo-rlhf:${PYTHONPATH}" \
-&& python -u rlhf/reward_models/train_reward_model.py \
-    --config-path=rlhf/reward_models/conf \
+&& python -u examples/nlp/gpt/train_reward_model.py \
+    --config-path=examples/nlp/gpt/conf/ \
     --config-name=training_rm \
-    model.pretrained_checkpoint.restore_from_path='model.nemo' \
-    "model.data.data_prefix={train: [${train_output_document}], validation: [${val_output_document}], test: [${test_output_document}]}"
+    exp_manager.explicit_log_dir=/path/to/rm_output_dir \
+    model.pretrained_checkpoint.restore_from_path=/path/to/init_model.nemo \
+    "model.data.data_prefix={train: [/path/to/rm_train], validation: [/path/to/rm_val], test: [/path/to/rm_test]}"
 ```
+
+The data files should point to the names of datasets generated as described in the previous section, but without the ".bin" or ".idx" suffix.
+Note that if you are using the command above with your own pre-trained model, you will need to modify `training_rm.yaml` (or the command line) to provide correct values for `tokenizer.model` and `tokenizer.tokenizer_model`.
+You can use `tar tvf /path/to/init_model.nemo` to inspect the model and obtain the name of its tokenizer files: typically, both files are identical and you may thus use the same name for both options, e.g. with
+```bash
+model.tokenizer.model=nemo:2b164b2c1dd74bd691ff90a0db3d39b8_xyz_256k.model \
+model.tokenizer.tokenizer_model=nemo:2b164b2c1dd74bd691ff90a0db3d39b8_xyz_256k.model \
+```
+
+_Remark: currently, the example training script does not automatically run evaluation on the provided test set. This may change in a future release._
 
 ##### 5.16.1.3 Reward Model Evaluation
 <a id="markdown-reward-model-evaluation" name="reward-model-evaluation"></a>
 
-To learn how to serve the reward model for evaluation, see the section "Launching the Reward Model inference server" below.
+Once trained, a reward model may be served for evaluation purpose, as described in the section "Launching the Reward Model Inference Server" below.
+This can also useful to compute the mean / std of reward predictions before doing PPO training, to be able to normalize them: documentation and scripts to perform such normalization will be provided soon.
 
 #### 5.16.2. PPO Training
 <a id="markdown-ppo-training" name="ppo-training"></a>
 
-After fine-tuning a GPT model using Supervised Finetuning(SFT) and training a Reward Model as explained in the previous sections, NeMo-RLHF can be used to launch PPO jobs to fine-tune the SFT model using RLHF. During PPO training, four different models will be interacting with each other:
+After fine-tuning a GPT model using Supervised Finetuning (SFT) and training a Reward Model as explained in the previous sections, NeMo-RLHF can be used to launch PPO jobs to fine-tune the SFT model using RLHF. During PPO training, four different models will be interacting with each other:
 
 1. The PPO Actor Network (also known as the Policy Network): This is the model we are training, and it should start from an SFT model trained as explained in the SFT section.
-2. The Reward Model (RM) Network (also known as a Preference Model (PM)): This model will take a prompt and a response as inputs, and it will provide a single scalar value as output. This scalar value will be the reward, which the PPO algorithm will try to maximize. The RM should be a model trained as described in the RM Training section.
-3. The PPO Critic Network (also known as the Value Network): Since PPO is an actor-critic algorithm, we need a critic to help our actor learn more effectively. The critic will provide Value estimates to each token in the responses provided by the actor. These values can be seen as an estimate of the amount of reward the actor will receive after generating all the remaining tokens. The critic is loaded from the same RM we trained as described in the RM training section. Note: The RM generates a single reward for the entire sequence, whereas the Critic generates a value for each token.
-4. The Initial Policy Network (also known as the Reference Model): We use this model to compute a KL Divergence penalty term that ensures that the PPO Actor does not diverge too much from the Initial Policy. This way, we prevent the PPO Actor from overfitting to the reward models given by the RM, and ensure it does not forget the knowledge it acquired during pretraining and SFT. This model should be the same model as the PPO Actor Network.
+2. The Reward Model (RM) Network (also known as a Preference Model (PM)): This model takes a prompt concatenated with a response as input, and outputs a single scalar value: the reward, which the PPO algorithm will try to maximize. The RM should be a model trained as described in the RM Training section.
+3. The PPO Critic Network (also known as the Value Network): Since PPO is an Actor-Critic algorithm, we need a Critic to guide the Actor during training. The Critic will provide value estimates for each token in the responses provided by the Actor. These values can be seen as an estimate of the total reward the Actor will receive after generating all the remaining tokens. The Critic should be initialized from the RM so as to provide useful feedback in the early stages of training. Note: The RM generates a single reward for the entire sequence, whereas the Critic generates a value for each token.
+4. The Initial Policy Network (also known as the Reference Model): We use this model to compute a KL Divergence penalty term that ensures that the PPO Actor does not diverge too much from the Initial Policy. This way, we prevent the PPO Actor from overfitting to the rewards given by the RM, and ensure it does not forget the knowledge it acquired during pretraining and SFT. This model should be the one used to initialize the PPO Actor Network.
 
-To launch a full PPO training job, we need to launch the RM and the Initial Policy as inference servers. These two models are not trained, so they only need to perform inference and share their result with the PPO Actor. However, the PPO Actor and PPO Critic need to be trained.
+To launch a full PPO training job, we need to launch the RM and the Initial Policy as inference servers. These two models are not trained, so they only need to perform inference and share their results with the PPO Actor. However, both the PPO Actor and Critic need to be trained.
 
-Our architecture is designed to launch all four models completely separately. Therefore, we will launch two inference servers (one for the RM and one for the initial policy), one server that can do inference and training (the PPO Critic), and one master job to do training (the PPO Actor). Next we will look at how to launch each of those four jobs.
+Our architecture is designed to launch all four models completely separately. Therefore, we will launch two inference servers (one for the RM and one for the initial policy), one server that can do inference and training (the PPO Critic), and one master job to control the training (the PPO Actor). Next we will look at how to launch each of those four jobs.
 
 ##### 5.16.2.1 Launching the Reward Model Inference Server
 <a id="markdown-launching-the-reward-model-inference-server" name="launching-the-reward-model-inference-server"></a>
 
-To launch the Reward Model inference server in a Linux system, this command can be run inside the container:
+To launch the Reward Model inference server, this command can be run inside the container:
 
 ```bash
 cd /opt/nemo-rlhf \
 && export PYTHONPATH="/opt/nemo-rlhf:${PYTHONPATH}" \
 && export HYDRA_FULL_ERROR=1 \
-&& python rlhf/reward_models/serve_reward_model.py \
-    --config-path=/opt/nemo-rlhf/rlhf/reward_models/conf \
+&& python -u examples/nlp/gpt/serve_reward_model.py \
+    --config-path=examples/nlp/gpt/conf/ \
     --config-name=inference_rm \
-    gpt_rm_model_file=/path/to/model.nemo \
+    gpt_rm_model_file=/path/to/trained_rm.nemo \
     port=5555
 ```
 
@@ -4952,16 +5313,16 @@ This command will launch the RM inference server on the local computer, using po
 ##### 5.16.2.2 Launching the Initial Policy Inference Server
 <a id="markdown-launching-the-initial-policy-inference-server" name="launching-the-initial-policy-inference-server"></a>
 
-To launch the Initial Policy inference server in a Linux system, this command can be run inside the container:
+To launch the Initial Policy inference server, this command can be run inside the container:
 
 ```bash
 cd /opt/nemo-rlhf \
 && export PYTHONPATH="/opt/nemo-rlhf:${PYTHONPATH}" \
 && export HYDRA_FULL_ERROR=1 \
-&& python rlhf/rlhf_nemo/serve_initial_policy.py \
-    --config-path=/opt/nemo-rlhf/rlhf/rlhf_nemo/conf \
+&& python -u examples/nlp/gpt/serve_initial_policy.py \
+    --config-path=examples/nlp/gpt/conf/ \
     --config-name=inference_initial_policy \
-    gpt_model_file=/path/to/model.nemo \
+    gpt_model_file=/path/to/sft_model.nemo \
     port=5556
 ```
 
@@ -4970,40 +5331,56 @@ This command will launch the Initial Policy inference server on the local comput
 ##### 5.16.2.3 Launching the PPO Critic Training and Inference Server
 <a id="markdown-launching-the-ppo-critic-training-and-inference-server" name="launching-the-ppo-critic-training-and-inference-server"></a>
 
-The PPO Critic has to perform both training and inference. We designed the Critic to have both capabilities. To launch the PPO Critic server in a Linux system, this command can be run inside the container:
+The PPO Critic has to perform both inference *and* training.
+To launch the PPO Critic server, which provides both functionalities, this command can be run inside the container:
 
 ```bash
 cd /opt/nemo-rlhf \
 && export PYTHONPATH="/opt/nemo-rlhf:${PYTHONPATH}" \
 && export HYDRA_FULL_ERROR=1 \
-&& python rlhf/rlhf_nemo/serve_ppo_critic.py \
-    --config-path=/opt/nemo-rlhf/rlhf/rlhf_nemo/conf \
+&& python -u examples/nlp/gpt/serve_ppo_critic.py \
+    --config-path=examples/nlp/gpt/conf/ \
     --config-name=gpt_ppo_critic \
+    exp_manager.explicit_log_dir=/path/to/critic_output_dir \
     model.pretrained_checkpoint.restore_from_path=/path/to/trained_rm.nemo \
-    port=5557
+    inference.port=5557
 ```
 
-This command will launch the PPO Critic server on the local computer, using port 5557. All the configuration parameters can be modified in the `gpt_ppo_critic.yaml` file, or by overriding them through the CLI command. Ensure `inference.server=True` is set in the configuration of this job to correctly launch the server.
+This command will launch the PPO Critic server on the local computer, using port 5557. All the configuration parameters can be modified in the `gpt_ppo_critic.yaml` file, or by overriding them through the CLI command: in particular, the Critic's model config should match the one used to train the RM, and you may need to provide the correct name of the tokenizer files as described in the RM training section above.
+Ensure `inference.server=True` is set in the configuration of this job to correctly launch the server.
 
 ##### 5.16.2.4 Launching the PPO Actor Training
 <a id="markdown-launching-the-ppo-actor-training" name="launching-the-ppo-actor-training"></a>
-The PPO Actor training job contains the master HTTP controller that makes the HTTP calls to all three servers when needed. To launch the PPO Actor server in a Linux system, this command can be run inside the container:
+The PPO Actor training job contains the master controller that makes the HTTP calls to all three servers when needed. To launch the PPO Actor server, this command can be run inside the container:
 
 ```bash
 cd /opt/nemo-rlhf \
 && export PYTHONPATH="/opt/nemo-rlhf:${PYTHONPATH}" \
 && export HYDRA_FULL_ERROR=1 \
-&& python rlhf/rlhf_nemo/train_gpt_ppo_actor.py \
-    --config-path=/opt/nemo-rlhf/rlhf/rlhf_nemo/conf \
+&& python -u examples/nlp/gpt/train_gpt_ppo_actor.py \
+    --config-path=examples/nlp/gpt/conf/ \
     --config-name=gpt_ppo_actor \
-    "model.data.data_prefix={train: [/path/to/train_data], validation: [/path/to/val_data], test: [/path/to/test_data]}" \
-    model.pretrained_checkpoint.restore_from_path=/path/to/model.nemo
+    exp_manager.explicit_log_dir=/path/to/actor_output_dir \
+    "model.data.data_prefix={train: [/path/to/actor_train], validation: [/path/to/actor_val], test: [/path/to/actor_test]}" \
+    model.pretrained_checkpoint.restore_from_path=/path/to/sft_model.nemo
 ```
-This command will launch the PPO Actor job on the local computer. All the configuration parameters can be modified in the `gpt_ppo_actor.yaml` file, or by overriding them through the CLI command.
 
-##### 5.16.2.5 Launching every job at once with SLURM
-<a id="markdown-launching-every-job-at-once-with-slurm" name="launching-every-job-at-once-with-slurm"></a>
-Heterogeneous jobs can be used to launch all four jobs simultaneously in different nodes, using a script like the one shown next:
+This command will launch the PPO Actor job on the local computer. All the configuration parameters can be modified in the `gpt_ppo_actor.yaml` file, or by overriding them through the CLI command: in particular, the Actor's model config should match the one used to train the SFT model, and you may need to provide the correct name of the tokenizer files as described in the RM training section above.
+
+The data files should point to the names of datasets (without the ".bin" or ".idx" suffix) generated in a manner similar to what is described in the RM training section, but with an important difference: they should only contain prompts.
+This means that the raw .jsonl from which the datasets are built should follow the following format:
+```
+{"text": prompt1}
+{"text": prompt2}
+{"text": prompt3}
+...
+```
+
+_Remark: currently, the example training script does not automatically run evaluation on the provided test set. This may change in a future release._
+
+##### 5.16.2.5 Launching all jobs at once with SLURM
+<a id="markdown-launching-all-jobs-at-once-with-slurm" name="launching-all-jobs-at-once-with-slurm"></a>
+Heterogeneous jobs can be used to launch all four jobs simultaneously on different nodes, using a script like:
 
 ```bash
 #!/bin/bash
@@ -5015,26 +5392,35 @@ Heterogeneous jobs can be used to launch all four jobs simultaneously in differe
 #SBATCH hetjob
 #SBATCH -N 8 --ntasks-per-node 8 -t 4:00:00 --exclusive
 
-RM_MODEL=/path/to/reward_model.nemo
+RM_MODEL=/path/to/trained_rm.nemo
 ACTOR_MODEL=/path/to/sft_model.nemo
+OUTPUT_DIR=/path/to/output_dir
+TRAIN_DATA_PATH=/path/to/train_actor
+VALID_DATA_PATH=/path/to/val_actor
+TEST_DATA_PATH=/path/to/test_actor
 
-DIR=/opt/nemo-rlhf
-CONTAINER="nvcr.io/ea-bignlp/nemofw-training:23.05-py3"
+NEMO_RLHF_DIR=/opt/nemo-rlhf
+CONTAINER="nvcr.io/ea-bignlp/ga-participants/nemofw-training:23.08.02"
+
+mkdir -p $OUTPUT_DIR
 
 # START HETEROGENEUS JOB 0
 
+mkdir -p ${OUTPUT_DIR}/rm
+RM_OUT=${OUTPUT_DIR}/rm/rm-%j.log
+RM_ERR=${OUTPUT_DIR}/rm/rm-%j.err
 read -r -d '' cmd_rm_inference <<EOF
-cd ${DIR} \
-&& export PYTHONPATH="${DIR}:${PYTHONPATH}" \
+cd ${NEMO_RLHF_DIR} \
+&& export PYTHONPATH="${NEMO_RLHF_DIR}:${PYTHONPATH}" \
 && export HYDRA_FULL_ERROR=1 \
-&& python rlhf/reward_models/serve_reward_model.py \
-    --config-path=/opt/nemo-rlhf/rlhf/reward_models/conf \
+&& python -u examples/nlp/gpt/serve_reward_model.py \
+    --config-path=examples/nlp/gpt/conf/ \
     --config-name=inference_rm \
     gpt_rm_model_file=${RM_MODEL} \
     port=${RM_PORT=5555}
 EOF
 
-srun --het-group=0 --container-image=${CONTAINER} bash -c "${cmd_rm_inference}" &
+srun -o $RM_OUT -e $RM_ERR --het-group=0 --container-image=${CONTAINER} bash -c "${cmd_rm_inference}" & pids[0]=$!
 
 # END HETEROGENEUS JOB 0
 
@@ -5042,38 +5428,44 @@ srun --het-group=0 --container-image=${CONTAINER} bash -c "${cmd_rm_inference}" 
 
 # START HETEROGENEUS JOB 1
 
+mkdir -p ${OUTPUT_DIR}/init_policy
+IP_OUT=${OUTPUT_DIR}/init_policy/init_policy-%j.log
+IP_ERR=${OUTPUT_DIR}/init_policy/init_policy-%j.err
 read -r -d '' cmd_init_policy_inference <<EOF
-cd ${DIR} \
-&& export PYTHONPATH="${DIR}:${PYTHONPATH}" \
+cd ${NEMO_RLHF_DIR} \
+&& export PYTHONPATH="${NEMO_RLHF_DIR}:${PYTHONPATH}" \
 && export HYDRA_FULL_ERROR=1 \
-&& python rlhf/rlhf_nemo/serve_initial_policy.py \
-    --config-path=/opt/nemo-rlhf/rlhf/rlhf_nemo/conf \
+&& python -u examples/nlp/gpt/serve_initial_policy.py \
+    --config-path=examples/nlp/gpt/conf/ \
     --config-name=inference_initial_policy \
     gpt_model_file=${ACTOR_MODEL} \
     port=${INIT_POLICY_PORT=5556}
 EOF
 
-srun --het-group=1 -o $INIT_POLICY_OUTFILE -e $INIT_POLICY_ERRFILE --container-image=${CONTAINER} $MOUNTS bash -c "${cmd_init_policy_inference}" &
+srun -o $IP_OUT -e $IP_ERR --het-group=1 --container-image=${CONTAINER} bash -c "${cmd_init_policy_inference}" & pids[1]=$!
 
 # END HETEROGENEUS JOB 1
 
-sleep 30
 ######################################################
 
 # START HETEROGENEUS JOB 2
 
+mkdir -p ${OUTPUT_DIR}/critic
+CRIT_OUT=${OUTPUT_DIR}/critic/critic-%j.log
+CRIT_ERR=${OUTPUT_DIR}/critic/critic-%j.err
 read -r -d '' cmd_critic_inference <<EOF
-cd ${DIR} \
-&& export PYTHONPATH="${DIR}:${PYTHONPATH}" \
+cd ${NEMO_RLHF_DIR} \
+&& export PYTHONPATH="${NEMO_RLHF_DIR}:${PYTHONPATH}" \
 && export HYDRA_FULL_ERROR=1 \
-&& python -u rlhf/rlhf_nemo/serve_ppo_critic.py \
-    --config-path=/opt/nemo-rlhf/rlhf/rlhf_nemo/conf \
+&& python -u examples/nlp/gpt/serve_ppo_critic.py \
+    --config-path=examples/nlp/gpt/conf/ \
     --config-name=gpt_ppo_critic \
+    exp_manager.explicit_log_dir=${OUTPUT_DIR}/critic \
     model.pretrained_checkpoint.restore_from_path=${RM_MODEL} \
     inference.port=${CRITIC_PORT=5557}
 EOF
 
-srun --het-group=2 --container-image=${CONTAINER} bash -c "${cmd_critic_inference}" &
+srun -o $CRIT_OUT -e $CRIT_ERR --het-group=2 --container-image=${CONTAINER} bash -c "${cmd_critic_inference}" & pids[2]=$!
 
 # END HETEROGENEUS JOB 2
 
@@ -5082,69 +5474,111 @@ sleep 30
 
 # START HETEROGENEUS JOB 3
 
-TRAIN_DATA_PATH=/path/to/train_data
-VALID_DATA_PATH=/path/to/val_data
-TEST_DATA_PATH=/path/to/test_data
-
 host_rm="$(scontrol show hostnames=$SLURM_JOB_NODELIST_HET_GROUP_0 | head -n1)"
 host_init_policy="$(scontrol show hostnames=$SLURM_JOB_NODELIST_HET_GROUP_1 | head -n1)"
 host_critic="$(scontrol show hostnames=$SLURM_JOB_NODELIST_HET_GROUP_2 | head -n1)"
 
+mkdir -p ${OUTPUT_DIR}/actor
+ACT_OUT=${OUTPUT_DIR}/actor/actor-%j.log
+ACT_ERR=${OUTPUT_DIR}/actor/actor-%j.err
 read -r -d '' cmd_ppo <<EOF
-cd ${DIR} \
-&& export PYTHONPATH="${DIR}:${PYTHONPATH}" \
+cd ${NEMO_RLHF_DIR} \
+&& export PYTHONPATH="${NEMO_RLHF_DIR}:${PYTHONPATH}" \
 && export HYDRA_FULL_ERROR=1 \
-&& python -u rlhf/rlhf_nemo/train_gpt_ppo_actor.py \
-    --config-path=/opt/nemo-rlhf/rlhf/rlhf_nemo/conf \
+&& python -u examples/nlp/gpt/train_gpt_ppo_actor.py \
+    --config-path=examples/nlp/gpt/conf/ \
     --config-name=gpt_ppo_actor \
+    exp_manager.explicit_log_dir=${OUTPUT_DIR}/actor
     trainer.num_nodes=8 \
     "model.data.data_prefix={train: [${TRAIN_DATA_PATH}], validation: [${VALID_DATA_PATH}], test: [${TEST_DATA_PATH}]}" \
     model.pretrained_checkpoint.restore_from_path=${ACTOR_MODEL} \
     model.rlhf.reward_model.ip=${host_rm} \
-    model.rlhf.reward_model.port=${RM_PORT} \
+    model.rlhf.reward_model.port=${RM_PORT=5555} \
     model.rlhf.initial_policy.ip=${host_init_policy} \
-    model.rlhf.initial_policy.port=${INIT_POLICY_PORT} \
+    model.rlhf.initial_policy.port=${INIT_POLICY_PORT=5556} \
     model.rlhf.critic.ip=${host_critic} \
-    model.rlhf.critic.port=${CRITIC_PORT}
+    model.rlhf.critic.port=${CRITIC_PORT=5557}
 EOF
 
-srun --het-group=3 --container-image=${CONTAINER} bash -c "${cmd_ppo}" &
+srun -o $ACT_OUT -e $ACT_ERR --het-group=3 --container-image=${CONTAINER} bash -c "${cmd_ppo}" & pids[3]=$!
 
 # END HETEROGENEUS JOB 3
 
-wait
+# The code below monitors the four SLURM jobs to ensure they are all stopped when one of them finishes.
+# (otherwise some jobs may remain pending until they reach the cluster time limit).
+all_done=false
+while ! $all_done; do
+    all_done=true
+    for pid in "${pids[@]}"; do
+        if ps -p "$pid" > /dev/null; then
+            # Process is still running.
+            all_done=false
+        else
+            # Process is no longer running => check its exit status.
+            wait "$pid"
+            exit_code=$?
+            echo "Process $pid exited with code $exit_code at $(date '+%Y-%m-%d %H:%M:%S')"
+            # Wait a bit (to get a clean stack trace in case there is one being generated), then kill the
+            # remaining processes if needed.
+            sleep 60
+            for other_pid in "${pids[@]}"; do
+                if ps -p "$other_pid" > /dev/null; then
+                    echo "Killing processs $other_pid"
+                    kill -9 "$other_pid"
+                fi
+            done
+            exit $exit_code
+        fi
+    done
+
+    # Sleep for a while before checking again.
+    sleep 60
+done
 ```
-It is important to launch each job with & after the `srun` command, to ensure each job doesn’t block the next one. The wait statement at the end of script ensures that the entire job does not exit until each individual job is finished.
 
-Note: the three servers do not support data parallelism. Therefore, the SLURM `–ntasks-per-node` value should be set to the model parallelism value (tensor parallelism * pipeline parallelism) for that same job. And the trainer.devices value must also be set to that same value as well. However, the PPO actor supports data parallelism, so `–ntasks-per-node` can be set to the number of GPUs in each node.
+It is important to launch all jobs with `&` after the `srun` command, to ensure they do not block each other.
 
-##### 5.16.2.6 PPO Hyper-parameters
+Note: all four scripts support data parallelism. Therefore, the SLURM `–ntasks-per-node` value may be set to the number of GPUs on each node, and `trainer.devices` should also be set to that same value.
+
+##### 5.16.2.6 Ensuring consistency between jobs
+<a id="markdown-ensuring-consistency-between-jobs" name="ensuring-consistency-between-jobs"></a>
+
+Since there are four independent jobs, each with their own config, one must be careful to ensure that the various configs are compatible with each other by following the guidelines below:
+
+- `critic.exp_manager.checkpoint_callback_params.every_n_train_steps` should be set to `actor.trainer.val_check_interval * actor.model.global_batch_size / critic.model.global_batch_size` so that the Critic is saved at the same frequency as the Actor.
+- `critic.inference.micro_batch_size` should be set to `actor.model.rlhf.ppo.rollout_micro_batch_size` divided by the Critic's data parallel size (which is obtained by the total number of GPUs the Critic is running on, i.e., `trainer.devices * trainer.num_nodes`, divided by the product of `model.tensor_model_parallel_size * model.pipeline_model_parallel_size`), rounded up.
+This ensures that the Critic can process the Actor's requests as efficiently as possible.
+- Similarly, `rm.inference_micro_batch_size` and `init_policy.inference_micro_batch_size` should be set to `actor.model.rlhf.ppo.rollout_micro_batch_size` divided by the RM and Initial Policy's data parallel size, rounded up.
+- `critic.model.ppo_epochs` should be equal to `actor.model.rlhf.ppo.epochs` so that the Critic performs the same number of updates as the Actor on the rollout buffer data.
+
+##### 5.16.2.7 PPO Hyper-parameters
 <a id="markdown-ppo-hyper-parameters" name="ppo-hyper-parameters"></a>
 
-All the model related parameters can be controlled the same way as in other NeMo training jobs. However, we also provide full control of the behavior of PPO during training, with a section in the config yaml files inside `model.rlhf`. These are the descriptions of the available hyper-parameters:
+All the model parameters can be controlled the same way as in other NeMo training jobs. However, we also provide full control of the behavior of PPO during training, with a section in the Actor config yaml file inside `model.rlhf`. These are the available hyper-parameters:
 
-- `rlhf.reward_model`: Provide the ip address and the port where the Reward Model will be running, to enable communication with it.
-- `rlhf.critic`: Provide the ip address and the port where the PPO Critic will be running, to enable communication with it.
-- `rlhf.initial_policy`: Provide the ip address and the port where the Initial Policy will be running, to enable communication with it.
-- `rlhf.ppo.entropy_penalty`: Control the effect of the entropy term in PPO.
-- `rlhf.ppo.inital_pollicy_kl_penalty`: Control the effect of the initial policy KL Divergence term in PPO.
-- `rlhf.ppo.use_absolute_kl`: Whether to use the absolute value of the initial policy KL Divergence or not.
-- `rlhf.ppo.epochs`: Number of epochs the actor and critic will perform on the data stored in the rollout buffer each time.
+- `rlhf.{reward_model,critic,initial_policy}.{ip,port}`: Provide the ip address and the port where the Reward Model, PPO Critic and Initial Policy will be running, to enable communication with them.
+- `rlhf.ppo.entropy_bonus`: Weight of the entropy term in the PPO loss.
+- `rlhf.ppo.inital_pollicy_kl_penalty`: Weight of the KL Divergence w.r.t. the Initial Policy in the PPO loss.
+- `rlhf.ppo.use_absolute_kl`: Whether or not to use the absolute value of the KL Divergence w.r.t. the Initial Policy.
+- `rlhf.ppo.epochs`: Number of training epochs the Actor will perform on the samples stored in the rollout buffer before generating new samples.
 - `rlhf.ppo.num_rollout_samples`: Number of samples that will be generated during the rollout stage before moving to the training stage.
-- `rlhf.ppo.rollout_micro_batch_size`: Micro batch size for the rollout phase. Each GPU will load this many prompts and generate responses for them.
-- `rlhf.ppo.ratio_eps`: epsilon value for clipping the PPO ratio during training.
-- `rlhf.ppo.discount`: discount factor for calculating the returns and advantages.
-- `rlhf.ppo.gae_lambda`: lambda value for the Generalized Advantage Estimation (GAE) calculation.
-- `rlhf.ppo.normalize_advantage`: whether to normalize the advantages to have a mean of zero and standard deviation of one.
+- `rlhf.ppo.rollout_micro_batch_size`: Micro batch size for the rollout phase. Each GPU will load this many prompts at once and generate responses for them.
+- `rlhf.ppo.ratio_eps`: Epsilon value for clipping the PPO ratio during training.
+- `rlhf.ppo.discount`: Discount factor for calculating the returns and advantages.
+- `rlhf.ppo.gae_lambda`: Lambda value for the Generalized Advantage Estimation (GAE) calculation.
+- `rlhf.ppo.normalize_advantage`: Whether or not to normalize the advantages to have a mean of zero and standard deviation of one within each global batch.
 
-During the rollout phase, the sampling parameters for the model can also be modified, by using the parameters in `model.sampling_params`.
+Note that although the sampling parameters during the rollout phase can also be modified (through `model.sampling_params.*`), it is not recommended to do so because the implementation currently does not account for these changes when computing the log probabilities of the generated responses.
+
+The Critic's config also contains a `model.rlhf` section with the following hyper-parameter:
+- `rlhf.ppo.critic_loss_clip_value`: Used in the Critic loss term that clamps the difference between the current Critic value predictions and those that were predicted during rollout generation (disabled when set to zero).
 
 #### 5.16.3. Future Work
 <a id="markdown-future-work" name="future-work"></a>
 
-- The reward model training only supports datasets with two responses per prompt. We will add support for training with datasets that have more than 2 responses per prompt in future releases.
-- The throughput of PPO will be greatly increased in future releases.
-- The stability of the PPO learning process is not good enough. We will continue working to improve the PPO learning for our models.
+- The throughput of PPO will be increased in future releases.
+- We will continue improving the stability of the PPO learning phase.
+- We will add more learning algorithms beyond PPO.
 
 ### 5.17 Curating pretraining datasets with the NeMo Data Curator
 
@@ -5163,6 +5597,8 @@ Currently, within the NeMo Data Curator, we support the following data-curation 
    - Fuzzy deduplication. Our implementation of fuzzy deduplication builds off of the following existing libraries:
      - For computing MinHash signatures we use a modified version of the MinHasher class provided in [pyLSH](https://github.com/mattilyra/LSH)
      - For the locality sensitive hashing, we extended the Redis-based implementation found in [datasketch](https://github.com/ekzhu/datasketch) beyond a single Redis server to a Redis Cluster. This enables this module to efficiently deduplicate large datasets that do not fit in memory of a single node (e.g., several TB of text)
+ - Multilingual downstream-task decontamination
+    -  Our implementation follows the approach of [OpenAI GPT3](https://arxiv.org/pdf/2005.14165.pdf) and [Microsoft Turing NLG 530B](https://arxiv.org/abs/2201.11990)
 
 The modules are implemented in a scalable manner using [Message Passing Interface (MPI) for Python (mpi4py)](https://mpi4py.readthedocs.io/en/stable/) and we use [Dask](https://dask.org) for creating balanced input jsonl files. With the scalable modules within the NeMo Data Curator, we have been have been able to fully process a [Common Crawl Snapshot](https://commoncrawl.org/2020/12/nov-dec-2020-crawl-archive-now-available/) (consisting of 60 TB of compressed WARC files) in approximately two days using 30 CPU nodes (with hardware similar to the `c5.24xlarge` [Amazon AWS C5 instance](https://aws.amazon.com/ec2/instance-types/c5/)). Please note that the core functions used within the NeMo Data Curator (e.g., html extraction, text cleaning, heuristic filtering, etc.) have not been fully optimized. The main goal of the NeMo Data Curator is to provide users the capability to apply these functions to their large datasets using many compute nodes.
 
@@ -5681,6 +6117,9 @@ The table and chart below show the performance results.
 
 ## 8. Changelog
 <a id="markdown-changelog" name="changelog"></a>
+**NeMo Framework 23.07**
+* Add Low-Rank Adaptation (LoRA) Support for T5 and mT5
+* Add Batch Size Ramp-up Support for GPT
 
 **NeMo Framework 23.05**
 * Low-Rank Adaptation (LoRA) Support for GPT
@@ -5826,9 +6265,10 @@ The table and chart below show the performance results.
 <a id="markdown-known-issues" name="known-issues"></a>
 Fixes for the following issues will be released shortly:
 * The inference hyperparameter search is not available in this release for T5 and mT5.
-* Accuracy and performance measurement for GPT-3 is currently not supported. Please use the NeMo Megatron 22.05 inference container to use this feature.
+* Accuracy and performance measurement for GPT is currently not supported. Please use the NeMo Megatron 22.05 inference container to use this feature.
 * The fine-tuning SQuAD results for T5 are lower than expected.
-* There has been a slight regression in T5 performance and this will be addressed in an upcoming release.
 * Evaluation for GPT has been tested for PP <=2 and may have issues for PP >2. It is recommended to convert to TP only for Evaluation.
 * Transformer Engine (TE)-based GPT models are currently not supported for any Parameter Efficient Fine Tuning (PEFT) techniques - this will be added soon.
 * TE-based GPT Eval will take more memory than non-TE-based GPT Eval.
+* Iteration per second metric is incorrectly displayed on the Logs progress bar - this will be addressed in the next release. Instead, please use train step timing in Weights & Biases or TensorBoard.
+* Please note that Batch Size Ramp-up Support for GPT is currently working only with FusedAdam optimizer.
