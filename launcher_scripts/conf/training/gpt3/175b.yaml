@@ -96,8 +96,8 @@ model:
   ## Sequence Parallelism
   sequence_parallel: True
 
-  overlap_p2p_comm: False # Overlap p2p communication with computes. This argument is valid only when `virtual_pipeline_model_parallel_size` is larger than 1
-  batch_p2p_comm: True # Batch consecutive inter-peer send/recv operations. This argument is valid only when `virtual_pipeline_model_parallel_size` is larger than 1
+  overlap_p2p_comm: True # Overlap p2p communication with computes. This argument is valid only when `virtual_pipeline_model_parallel_size` is larger than 1
+  batch_p2p_comm: False # Batch consecutive inter-peer send/recv operations. This argument is valid only when `virtual_pipeline_model_parallel_size` is larger than 1
   num_query_groups: null # Number of query groups for group query attention. If None, normal attention is used.
 
   tokenizer:
@@ -125,7 +125,7 @@ model:
   ## Transformer Engine
   # To use fp8, please set `transformer_engine=True` and `fp8=True`.
   # The rest of fp8 knobs are set for the fp8 training mode, which are ignored in non-fp8 training
-  transformer_engine: False
+  transformer_engine: True
   fp8: False # enables fp8 in TransformerLayer forward
   fp8_e4m3: False # sets fp8_format = recipe.Format.E4M3
   fp8_hybrid: True # sets fp8_format = recipe.Format.HYBRID
