@@ -44,7 +44,7 @@ container_mounts: # List of additional paths to mount to container. They will be
   - ${code}:/opt/NeMo
 
 #container: nvcr.io/ea-bignlp/nemofw-training:23.05-py3
-#container: nvcr.io/nvidian/nemo-nightly:latest-nightly-main
+#container: nvcr.io/ea-bignlp/ga-participants/nemofw-training:23.08.03
 container: gitlab-master.nvidia.com/xren/nemo_megatron_perf_optimization:nemo_nightly_cp_debug_230608
 
 wandb_api_key_file: ${launcher_scripts_path}/../wandb/wandb_api_key  # File where the w&B api key is stored. Key must be on the first line.
