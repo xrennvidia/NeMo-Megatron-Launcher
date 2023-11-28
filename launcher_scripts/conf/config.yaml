@@ -3,7 +3,7 @@ defaults:
   - cluster: bcm  # Set to bcm for BCM and BCP clusters. Set to k8s for a k8s cluster.
   - data_preparation: gpt3/download_gpt3_pile
   - quality_filtering: heuristic/english
-  - training: gpt3/175b
+  - training: llama/llama2_70b_internal
   - conversion: gpt3/convert_gpt3
   - fine_tuning: null
   - peft: null
@@ -28,12 +28,13 @@ stages:
 
 results:
     base: /home/xren/results/nemo_megatron/nemo
-    dir: gpt3/175b
+    dir: llama2_nsys/70b
 code: /home/xren/my_work/nemo_megatron/nemo/NeMo
 
 #preproc_data: /lustre/fsw/joc/big_nlp/t5/dataset/Pile # T5 dataset
 #preproc_data: /lustre/fsw/joc/big_nlp/gpt3/prepare_dataset/the_pile/train # GPT3 dataset in selene
-preproc_data: /lustre/fsw/coreai_dlalgo_llm/dataset/the_pile/train # GPT3 dataset in eos
+#preproc_data: /lustre/fsw/coreai_dlalgo_llm/dataset/the_pile/train # GPT3 dataset in eos
+preproc_data: /lustre/fsw/coreai_dlalgo_llm/vsarge/llama2 # LLaMa2 dataset in eos
 
 cluster_type: bcm  # bcm or bcp. If bcm, it must match - cluster above.
 # Path to NeMo Megatron Launch scripts, should ends with /launcher_scripts
@@ -41,11 +42,11 @@ launcher_scripts_path: /home/xren/my_work/nemo_megatron/nemo/NeMo-Megatron-Launc
 data_dir: ${preproc_data}  # Location to store and read the data.
 base_results_dir: ${results.base}/${results.dir}  # Location to store the results, checkpoints and logs.
 container_mounts: # List of additional paths to mount to container. They will be mounted to same path.
-  - ${code}:/opt/NeMo
+  - ${launcher_scripts_path}/conf/training/tp_overlap:/tp_overlap
+  #- ${code}:/opt/NeMo
 
-#container: nvcr.io/ea-bignlp/nemofw-training:23.05-py3
 #container: nvcr.io/ea-bignlp/ga-participants/nemofw-training:23.08.03
-container: gitlab-master.nvidia.com/xren/nemo_megatron_perf_optimization:nemo_2308_cp_ub_fa2
+container: nvcr.io/nvidian/nemo2310_llama_sft:v4_pyt23.09
 
 wandb_api_key_file: ${launcher_scripts_path}/../wandb/wandb_api_key  # File where the w&B api key is stored. Key must be on the first line.
 wandb_api_bcp_secret_key: null  # For BCP clusters, read the W&B api key directly from the environment variable set as a secret from BCP. The value must match the name of the environment variable in BCP, such as WANDB_TOKEN.
@@ -63,6 +64,8 @@ env_vars:
   TORCH_NCCL_AVOID_RECORD_STREAMS: 1
   NCCL_NVLS_ENABLE: 0
   NVTE_APPLY_QK_LAYER_SCALING: 1
+  NVTE_DP_AMAX_REDUCE_INTERVAL: 0
+  NVTE_ASYNC_AMAX_REDUCTION: 1
 
 # GPU Mapping
 numa_mapping:
