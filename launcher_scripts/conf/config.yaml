@@ -47,8 +47,7 @@ base_results_dir: ${results.base}/${results.dir}  # Location to store the result
 container_mounts: # List of additional paths to mount to container. They will be mounted to same path.
   - ${code}:/opt/NeMo
 
-#container: nvcr.io/ea-bignlp/nemofw-training:23.05-py3
-#container: nvcr.io/ea-bignlp/ga-participants/nemofw-training:23.11
+#container: nvcr.io/nvidia/nemo:24.01.framework
 container: gitlab-master.nvidia.com/xren/nemo_megatron_perf_optimization:nemo_2308_cp_ub_fa2
 
 wandb_api_key_file: ${launcher_scripts_path}/../wandb/wandb_api_key  # File where the w&B api key is stored. Key must be on the first line.
@@ -68,6 +67,7 @@ env_vars:
   NCCL_NVLS_ENABLE: 0
   NVTE_DP_AMAX_REDUCE_INTERVAL: 0 # Diable FP8 AMAX reduction in the data-parallel domain
   NVTE_ASYNC_AMAX_REDUCTION: 1 # Enable asynchronous FP8 AMAX reduction
+  NVTE_FUSED_ATTN: 0 # Disable cudnn FA until we've tested it more
 
 # GPU Mapping
 numa_mapping:
