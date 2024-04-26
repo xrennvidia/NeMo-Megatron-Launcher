@@ -104,7 +104,7 @@ model:
   fsdp_sharded_checkpoint: False # Store and load FSDP shared checkpoint.
 
   ## Sequence Parallelism
-  sequence_parallel: True
+  sequence_parallel: False
 
   overlap_p2p_comm: True # Overlap p2p communication with computes. This argument is valid only when `virtual_pipeline_model_parallel_size` is larger than 1
   batch_p2p_comm: False # Batch consecutive inter-peer send/recv operations. This argument is valid only when `virtual_pipeline_model_parallel_size` is larger than 1
