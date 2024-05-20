@@ -36,6 +36,7 @@ __LANGUAGE_MODELS_LIST__ = [
     "t5",
     "mt5",
     "bert",
+    "bert_embedding",
     "llama",
     "gemma",
     "falcon",
@@ -44,6 +45,7 @@ __LANGUAGE_MODELS_LIST__ = [
     "mixtral",
     "starcoder2",
     "chatglm",
+    "griffin",
     "qwen2",
 ]
 __VISION_MODELS_LIST__ = ["vit"]
@@ -939,6 +941,8 @@ class FineTuning(NeMoStage):
         """
 
         model_type_to_code_path = {
+            "bert_embedding": self._nemo_code_path
+            / "examples/nlp/information_retrieval/megatron_bert_embedding_finetuning.py",
             "gpt3": self._nemo_code_path
             / "examples/nlp/language_modeling/tuning/megatron_gpt_finetuning.py",
             "llama": self._nemo_code_path
@@ -1110,6 +1114,8 @@ class PEFT(NeMoStage):
             / "examples/nlp/language_modeling/tuning/megatron_gpt_finetuning.py",
             "gemma": self._nemo_code_path
             / "examples/nlp/language_modeling/tuning/megatron_gpt_finetuning.py",
+            "griffin": self._nemo_code_path
+            / "examples/nlp/language_modeling/megatron_griffin_finetuning.py",
             "nemotron": self._nemo_code_path
             / "examples/nlp/language_modeling/tuning/megatron_gpt_finetuning.py",
             "neva": self._nemo_code_path
@@ -2458,5 +2464,5 @@ class PostTrainingQuantization(NeMoStage):
         # TODO: rename to megatron_quantization.py as this script works for other model families as well
         return (
             self._nemo_code_path
-            / "examples/nlp/language_modeling/megatron_llama_quantization.py"
+            / "examples/nlp/language_modeling/megatron_quantization.py"
         )
