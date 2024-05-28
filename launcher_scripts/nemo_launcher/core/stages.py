@@ -58,6 +58,7 @@ __MULTIMODAL_MODELS_LIST__ = [
     "controlnet",
     "nsfw",
     "neva",
+    "video_neva",
 ]
 
 
@@ -203,6 +204,20 @@ class NemoMegatronStage:
             f"cd {self._nemo_code_path}",
             "git rev-parse HEAD",
             f"export PYTHONPATH={self._nemo_code_path}:\${{PYTHONPATH}}",
+        ]
+
+    def _make_git_log_command(self, stage_cfg_path: Path):
+        """log last 5 commits for repos- NeMo, megatron-lm, NeMo-Framework-Launcher or NeMo-Megatron-Launcher
+        'NeMo-Megatron-Launcher' was renamed to 'NeMo-Framework-Launcher'. We run git log for both for
+        backwards compatibility.
+        """
+        append_to_file = f"{stage_cfg_path.parent}/git_log.txt"
+        return [
+            f"(echo PYT$\"NVIDIA_PYTORCH_VERSION\" && \
+                git --git-dir=/opt/NeMo/.git log -n 5 --format='NeMo;%h;%aD;%s' && \
+                git --git-dir=/opt/megatron-lm/.git log -n 5 --format='megatron-lm;%h;%aD;%s' && \
+                git --git-dir=/opt/NeMo-Framework-Launcher/.git log -n 5 --format='NeMo-Framework-Launcher;%h;%aD;%s' && \
+                git --git-dir=/opt/NeMo-Megatron-Launcher/.git log -n 5 --format='NeMo-Megatron-Launcher;%h;%aD;%s') > {append_to_file}"
         ]
 
     def _make_k8s_spec_file(
@@ -604,6 +619,7 @@ class NeMoStage(NemoMegatronStage):
         command_groups = [[]]
         command_groups[0] += self._make_wandb_login_command()
         command_groups[0] += self._make_nemo_path_command()
+        command_groups[0] += self._make_git_log_command(stage_cfg_path)
         # command_groups[0] += self._make_numa_mapping_command()
 
         # _cuda_device_max_connections and _cuda_visible_devices cannot be used as command prefix on BCP
@@ -879,6 +895,8 @@ class Training(NeMoStage):
             / "examples/multimodal/text_to_image/controlnet/controlnet_train.py",
             "nerf": self._nemo_code_path / "examples/multimodal/x_to_nerf/nerf/main.py",
             "neva": self._nemo_code_path
+            / "examples/multimodal/multimodal_llm/neva/neva_pretrain.py",
+            "video_neva": self._nemo_code_path
             / "examples/multimodal/multimodal_llm/neva/neva_pretrain.py",
             "mistral": self._nemo_code_path
             / "examples/nlp/language_modeling/megatron_gpt_pretraining.py",
@@ -1277,6 +1295,8 @@ class FWInference(NeMoStage):
             "controlnet": self._nemo_code_path
             / "examples/multimodal/text_to_image/controlnet/controlnet_infer.py",
             "neva": self._nemo_code_path
+            / "examples/multimodal/multimodal_llm/neva/neva_evaluation.py",
+            "video_neva": self._nemo_code_path
             / "examples/multimodal/multimodal_llm/neva/neva_evaluation.py",
             "retro": self._nemo_code_path
             / "examples/nlp/language_modeling/megatron_retro_eval.py",
