@@ -62,7 +62,7 @@ model:
   pipeline_model_parallel_size: 1
   virtual_pipeline_model_parallel_size: null
   encoder_seq_length: 4096
-  max_position_embeddings: 4096
+  max_position_embeddings: ${.encoder_seq_length}
   num_layers: 32
   hidden_size: 4096
   ffn_hidden_size: 11008
@@ -167,7 +167,7 @@ model:
   data:
     data_impl: mock
     splits_string: "99990,8,2"
-    seq_length: 4096
+    seq_length: ${training.model.encoder_seq_length}
     skip_warmup: true
     num_workers: 2
     dataloader_type: single
