@@ -27,7 +27,7 @@ launcher_scripts_path: ${auto_configurator_path}/../launcher_scripts
 base_results_dir: ${results.base}/${results.dir}
 data_dir: ${preproc_data}
 
-training_container: nvcr.io/nvidia/nemo:24.05
+training_container: nvcr.io/nvidia/nemo:24.07
 container_mounts:
     - ${nemo_code}:/opt/NeMo
 
