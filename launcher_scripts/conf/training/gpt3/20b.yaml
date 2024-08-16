@@ -149,8 +149,6 @@ model:
   fp8_wgrad: True
 
   ub_tp_comm_overlap: True
-  tp_comm_atomic_ag: False
-  tp_comm_atomic_rs: False
 
   # miscellaneous
   seed: 1234
